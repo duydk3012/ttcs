@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background-color: #343a40;
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.75);
+        }
+        .sidebar .nav-link:hover {
+            color: rgba(255, 255, 255, 1);
+        }
+        .sidebar .nav-link.active {
+            color: white;
+            font-weight: bold;
+        }
+        .main-content {
+            padding: 20px;
+        }
+        .card-counter {
+            box-shadow: 2px 2px 10px #DADADA;
+            margin: 5px;
+            padding: 20px 10px;
+            border-radius: 5px;
+        }
+        /* Style cho header */
+        header.navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .navbar-brand.logo {
+            flex-shrink: 0;
+            margin-right: auto;
+        }
+
+        .toggle-btn {
+            flex-shrink: 0;
+            z-index: 10;
+            order: -1;
+        }
+
+        .user-dropdown {
+            flex-shrink: 0;
+            margin-left: auto;
+        }
+
+        @media (max-width: 767.98px) {
+            .navbar-brand.logo {
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            .toggle-btn {
+                margin-right: auto;
+                margin-left: 0;
+            }
+            .user-dropdown {
+                margin-left: 0;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .toggle-btn,
+            .user-dropdown {
+                display: none !important;
+            }
+            .navbar-brand.logo {
+                position: static;
+                transform: none;
+                margin: 0 auto;
+            }
+        }
+
+        .navbar-brand.logo img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+<!-- Header -->
+<header class="navbar navbar-dark sticky-top bg-dark p-3 shadow">
+    <div class="container-fluid d-flex align-items-center justify-content-between">
+        <!-- Logo -->
+        <a class="navbar-brand logo" th:href="@{/}">
+            <img th:src="@{/images/logo_text.png}" alt="Logo" class="img-fluid" style="width: 200px;">
+        </a>
+
+        <!-- Toggle button -->
+        <button class="navbar-toggler d-md-none collapsed toggle-btn" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- User dropdown menu -->
+        <div class="dropdown user-dropdown">
+            <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown">
+                <img th:src="@{${currentUser.avatarUrl}}" width="32" height="32" class="rounded-circle me-2" alt="Avatar">
+                <strong th:text="${currentUser.fullName} ?: ${currentUser.username}"></strong>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
+                <li><a class="dropdown-item" href="/user/profile">Profile</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <form action="#" th:action="@{/logout}" method="POST">
+                        <input type="submit" value="Sign out" class="dropdown-item" />
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </div>
+</header>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/admin/dashboard">
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/users">
+                            User Management
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+            <!-- Hiển thị thông báo nếu có -->
+            <div th:if="${param.success}" class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                Operation completed successfully!
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                Error occurred! Please try again.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Dashboard Overview</h1>
+            </div>
+
+            <!-- Thống kê nhanh -->
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card-counter primary">
+                        <i class="fas fa-users"></i>
+                        <span class="count-numbers" th:text="${totalUsers}">0</span>
+                        <span class="count-name">Total Users</span>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="card-counter success">
+                        <i class="fas fa-user-check"></i>
+                        <span class="count-numbers" th:text="${activeUsers}">0</span>
+                        <span class="count-name">Active Users</span>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="card-counter warning">
+                        <i class="fas fa-user-clock"></i>
+                        <span class="count-numbers" th:text="${inactiveUsers}">0</span>
+                        <span class="count-name">Inactive Users</span>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="card-counter danger">
+                        <i class="fas fa-user-plus"></i>
+                        <span class="count-numbers" th:text="${newUsersToday}">0</span>
+                        <span class="count-name">New Today</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Recent Users</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                    <tr>
+                                        <th>Username</th>
+                                        <th>Email</th>
+                                        <th>Status</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <!-- Hiển thị danh sách user gần đây -->
+                                    <tr th:each="user : ${recentUsers}">
+                                        <td th:text="${user.username}"></td>
+                                        <td th:text="${user.email}"></td>
+                                        <td>
+                                            <span th:if="${user.enabled}" class="badge bg-success">Active</span>
+                                            <span th:unless="${user.enabled}" class="badge bg-danger">Inactive</span>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>System Statistics</h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Có thể thêm biểu đồ ở đây -->
+                            <p>System is running normally</p>
+                            <div class="progress mb-3">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: 85%" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <small class="text-muted">System performance: 85%</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Bootstrap JS Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
