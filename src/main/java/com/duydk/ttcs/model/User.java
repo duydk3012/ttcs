@@ -29,6 +29,9 @@ public class User {
     private String avatarUrl = "/images/avatar/user.png";
 
     @Column(nullable = false)
+    private int points = 0;
+
+    @Column(nullable = false)
     private boolean enabled = true;
 
     private LocalDateTime createdAt;

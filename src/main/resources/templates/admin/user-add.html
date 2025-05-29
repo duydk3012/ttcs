@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create New User</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
+    <!-- Custom CSS -->
+    <style>
+        /* CSS cho sidebar */
+        .sidebar {
+            min-height: 100vh;
+            background-color: #343a40;
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.75);
+        }
+        .sidebar .nav-link:hover {
+            color: rgba(255, 255, 255, 1);
+        }
+        .sidebar .nav-link.active {
+            color: white;
+            font-weight: bold;
+        }
+        .main-content {
+            padding: 20px;
+        }
+        /* CSS cho header */
+        header.navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+        .navbar-brand.logo {
+            flex-shrink: 0;
+            margin-right: auto;
+        }
+        .toggle-btn {
+            flex-shrink: 0;
+            z-index: 10;
+            order: -1;
+        }
+        .user-dropdown {
+            flex-shrink: 0;
+            margin-left: auto;
+        }
+        @media (max-width: 767.98px) {
+            .navbar-brand.logo {
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            .toggle-btn {
+                margin-right: auto;
+                margin-left: 0;
+            }
+            .user-dropdown {
+                margin-left: 0;
+            }
+        }
+        @media (max-width: 576px) {
+            .toggle-btn,
+            .user-dropdown {
+                display: none !important;
+            }
+            .navbar-brand.logo {
+                position: static;
+                transform: none;
+                margin: 0 auto;
+            }
+        }
+        .navbar-brand.logo img {
+            max-width: 100%;
+            height: auto;
+        }
+        /* CSS cho form */
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .avatar-container {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: 0 auto 15px;
+            position: relative;
+        }
+        .avatar-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .avatar-upload-btn {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            text-align: center;
+            padding: 5px;
+            cursor: pointer;
+            display: none;
+        }
+        .avatar-container:hover .avatar-upload-btn {
+            display: block;
+        }
+        .profile-content {
+            display: flex;
+            gap: 30px;
+        }
+        .profile-avatar {
+            flex: 0 0 200px;
+        }
+        .profile-info {
+            flex: 1;
+        }
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .profile-header {
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<!-- Header -->
+<header class="navbar navbar-dark sticky-top bg-dark p-3 shadow">
+    <div class="container-fluid d-flex align-items-center justify-content-between">
+        <!-- Logo -->
+        <a class="navbar-brand logo" th:href="@{/}">
+            <img th:src="@{/images/logo_text.png}" alt="Logo" class="img-fluid" style="width: 200px;">
+        </a>
+
+        <!-- Nút toggle cho sidebar -->
+        <button class="navbar-toggler d-md-none collapsed toggle-btn" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Dropdown thông tin user -->
+        <div class="dropdown user-dropdown">
+            <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown">
+                <img th:src="@{${currentUser.avatarUrl}}" width="32" height="32" class="rounded-circle me-2" alt="Avatar">
+                <strong th:text="${currentUser.fullName} ?: ${currentUser.username}"></strong>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
+                <li><a class="dropdown-item" href="/user/profile">Profile</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <form action="#" th:action="@{/logout}" method="POST">
+                        <input type="submit" value="Sign out" class="dropdown-item" />
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </div>
+</header>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/dashboard">
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/admin/users">
+                            User Management
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Nội dung chính -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+            <!-- Thông báo -->
+            <div th:if="${param.success}" class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                User created successfully!
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${error != null}" class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                <span th:text="${error}">Error occurred! Please try again.</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <!-- Tiêu đề -->
+            <div class="profile-header">
+                <h2>Create New User</h2>
+            </div>
+
+            <!-- Nội dung form -->
+            <div class="form-container">
+                <div class="profile-content">
+
+                    <!-- Thông tin user -->
+                    <div class="profile-info">
+                        <form th:action="@{/admin/users/add}" th:object="${createUserDTO}" method="post">
+                            <!-- Username -->
+                            <div class="mb-3 row">
+                                <label for="username" class="col-sm-3 col-form-label">Username</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" id="username" th:field="*{username}"
+                                           th:classappend="${#fields.hasErrors('username')} ? 'is-invalid'">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
+                                </div>
+                            </div>
+                            <!-- Full Name -->
+                            <div class="mb-3 row">
+                                <label for="fullName" class="col-sm-3 col-form-label">Full Name (Optional)</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" id="fullName" th:field="*{fullName}"
+                                           th:classappend="${#fields.hasErrors('fullName')} ? 'is-invalid'">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></div>
+                                </div>
+                            </div>
+                            <!-- Email -->
+                            <div class="mb-3 row">
+                                <label for="email" class="col-sm-3 col-form-label">Email</label>
+                                <div class="col-sm-9">
+                                    <input type="email" class="form-control" id="email" th:field="*{email}"
+                                           th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+                                </div>
+                            </div>
+                            <!-- Password -->
+                            <div class="mb-3 row">
+                                <label for="password" class="col-sm-3 col-form-label">Password</label>
+                                <div class="col-sm-9">
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" id="password" th:field="*{password}"
+                                               th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'"
+                                               placeholder="Enter password">
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Confirm Password -->
+                            <div class="mb-3 row">
+                                <label for="confirmPassword" class="col-sm-3 col-form-label">Confirm Password</label>
+                                <div class="col-sm-9">
+                                    <input type="password" class="form-control" id="confirmPassword" th:field="*{confirmPassword}"
+                                           th:classappend="${#fields.hasErrors('confirmPassword')} ? 'is-invalid'"
+                                           placeholder="Confirm password">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}"></div>
+                                </div>
+                            </div>
+                            <!-- Action Buttons -->
+                            <div class="action-buttons">
+                                <button type="submit" class="btn btn-primary">Create User</button>
+                                <a th:href="@{/admin/users}" class="btn btn-secondary">Cancel</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Bootstrap JS Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- CompressorJS để nén ảnh -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.1.1/compressor.min.js"></script>
+
+</body>
+</html>

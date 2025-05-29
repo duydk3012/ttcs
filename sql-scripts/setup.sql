@@ -1,10 +1,11 @@
 CREATE TABLE users (
                        id INT PRIMARY KEY AUTO_INCREMENT,
                        username VARCHAR(50) NOT NULL UNIQUE,
-                       email VARCHAR(100) UNIQUE,
+                       email VARCHAR(100) NOT NULL UNIQUE,
                        password VARCHAR(255) NOT NULL,
                        full_name VARCHAR(100),
                        avatar_url VARCHAR(255) DEFAULT '/images/avatar/user.png',
+                       points INTEGER DEFAULT 0 NOT NULL,
                        enabled tinyint NOT NULL DEFAULT 1,
                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

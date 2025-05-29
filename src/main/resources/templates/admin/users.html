@@ -169,8 +169,8 @@
         <!-- Main content -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
             <!-- Thông báo -->
-            <div th:if="${param.success}" class="alert alert-success alert-dismissible fade show mt-3" role="alert">
-                Operation completed successfully!
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                <span th:text="${successMessage}"></span>
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
             <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
@@ -181,7 +181,7 @@
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h1 class="h2">User Management</h1>
                 <div class="btn-toolbar mb-2 mb-md-0">
-                    <a href="/admin/users/new" class="btn btn-sm btn-primary">
+                    <a href="/admin/users/add" class="btn btn-sm btn-primary">
                         <i class="fas fa-plus me-1"></i> Add New User
                     </a>
                 </div>
@@ -259,13 +259,13 @@
                         </td>
                         <td th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy')}"></td>
                         <td class="action-buttons">
-                            <a th:href="@{/admin/users/{id}/edit(id=${user.id})}" class="btn btn-sm btn-outline-primary">
+                            <a th:href="@{/admin/users/edit/{id}(id=${user.id})}" class="btn btn-sm btn-outline-primary">
                                 <i class="fas fa-edit"></i>
                             </a>
                             <button type="button" class="btn btn-sm btn-outline-danger ms-1" data-bs-toggle="modal" data-bs-target="#deleteModal" th:attr="data-bs-userid=${user.id}">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
-                            <form th:action="@{/admin/users/{id}/toggle-status(id=${user.id})}" method="post" class="d-inline">
+                            <form th:action="@{/admin/users/toggle-status/{id}(id=${user.id})}" method="post" class="d-inline">
                                 <button type="submit" class="btn btn-sm ms-1" th:classappend="${user.enabled} ? 'btn-outline-warning' : 'btn-outline-success'">
                                     <i th:classappend="${user.enabled} ? 'fa-user-slash' : 'fa-user-check'" class="fas"></i>
                                 </button>
@@ -326,7 +326,7 @@
             var button = event.relatedTarget;
             var userId = button.getAttribute('data-bs-userid');
             var form = document.getElementById('deleteForm');
-            form.action = `/admin/users/${userId}/delete`;
+            form.action = `/admin/users/delete/${userId}`;
         });
     });
 </script>
