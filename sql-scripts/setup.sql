@@ -4,7 +4,7 @@ CREATE TABLE users (
                        email VARCHAR(100) NOT NULL UNIQUE,
                        password VARCHAR(255) NOT NULL,
                        full_name VARCHAR(100),
-                       avatar_url VARCHAR(255) DEFAULT '/images/avatar/user.png',
+                       avatar_url VARCHAR(255) DEFAULT '/images/avatar/default-avatar.png',
                        points INTEGER DEFAULT 0 NOT NULL,
                        enabled tinyint NOT NULL DEFAULT 1,
                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
