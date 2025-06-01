@@ -38,6 +38,7 @@ public class UserController {
     public String userProfile(Model model) {
         UserResponseDTO user = userService.getCurrentUserProfile();
         model.addAttribute("user", user);
+        model.addAttribute("currentUser", user);
         model.addAttribute("updateProfileDTO", new UpdateProfileDTO());
         return "user/profile";
     }

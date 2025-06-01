@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <title th:text="'Chương ' + ${chapter.chapterNumber} + ' - ' + ${story.title} + ' - Story Clone'">Chapter</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    /* Header styles */
+    .navbar {
+      padding: 0.5rem 1rem;
+    }
+
+    .user-dropdown .dropdown-toggle {
+      padding: 0.25rem 0.5rem;
+    }
+
+    .user-dropdown img {
+      width: 32px;
+      height: 32px;
+      object-fit: cover;
+    }
+
+    .logo img {
+      transition: transform 0.3s ease;
+    }
+
+    .logo:hover img {
+      transform: scale(1.05);
+    }
+    /* Style cho thanh điều hướng chương */
+    .chapter-nav {
+      position: sticky;
+      top: 72px;
+      z-index: 1020;
+      background-color: #f8f9fa;
+      padding: 10px 0;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    /* Style cho nội dung chương */
+    .chapter-content {
+      margin-top: 20px;
+      white-space: pre-wrap; /* Giữ định dạng xuống dòng */
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+
+    /* Style cho bình luận */
+    .comment-section {
+      margin-top: 30px;
+    }
+
+    .comment-item {
+      padding: 10px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .comment-form {
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 5px;
+      margin-bottom: 20px;
+    }
+    .chapter-header {
+      padding: 1.5rem 0;
+      border-bottom: 1px solid #eaeaea;
+      margin-bottom: 2rem;
+    }
+
+    .story-title {
+      font-size: 2rem;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 0.5rem;
+    }
+
+    .chapter-title {
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: #007bff;
+      padding-bottom: 0.5rem;
+      position: relative;
+      display: inline-block;
+    }
+
+    .chapter-title:after {
+      content: '';
+      position: absolute;
+      width: 50%;
+      height: 3px;
+      bottom: 0;
+      left: 25%;
+      background: linear-gradient(90deg, transparent, #007bff, transparent);
+      border-radius: 3px;
+    }
+  </style>
+</head>
+
+<body>
+<!-- Header -->
+<div th:replace="~{fragments/header :: header}"></div>
+
+<!-- Phần nội dung chính -->
+<main class="container my-4">
+  <!-- Thông tin chương -->
+  <section class="chapter-header text-center mb-4">
+    <h1 class="mb-3">
+      <a th:href="@{/story/{storyId}(storyId=${story.id})}" class="text-decoration-none text-dark" th:text="${story.title}"></a>
+    </h1>
+    <h2 class="chapter-title" th:text="'Chương ' + ${chapter.chapterNumber} + ': ' + ${chapter.title}">Tên chương</h2>
+  </section>
+
+  <!-- Thanh điều hướng chương -->
+  <nav class="chapter-nav">
+    <div class="container d-flex align-items-center justify-content-between">
+      <!-- Nút chương trước -->
+      <a class="btn btn-outline-primary" th:classappend="${previousChapter == null} ? 'disabled'"
+         th:href="@{/story/__${story.id}__/chapter/__${previousChapter?.id}__}"
+         th:if="${previousChapter != null}">
+        <i class="fas fa-chevron-left"></i> Chương trước
+      </a>
+      <a class="btn btn-outline-primary disabled" th:if="${previousChapter == null}">
+        <i class="fas fa-chevron-left"></i> Chương trước
+      </a>
+
+      <!-- Dropdown chọn chương -->
+      <select class="form-select w-auto" onchange="location = this.value;">
+        <option th:each="chap : ${chapterList}"
+                th:value="@{/story/__${story.id}__/chapter/__${chap.id}__}"
+                th:text="'Chương ' + ${chap.chapterNumber} + ': ' + ${chap.title}"
+                th:selected="${chap.id == chapter.id}"></option>
+      </select>
+
+      <!-- Nút chương sau -->
+      <a class="btn btn-outline-primary" th:classappend="${nextChapter == null} ? 'disabled'"
+         th:href="@{/story/__${story.id}__/chapter/__${nextChapter?.id}__}"
+         th:if="${nextChapter != null}">
+        Chương sau <i class="fas fa-chevron-right"></i>
+      </a>
+      <a class="btn btn-outline-primary disabled" th:if="${nextChapter == null}">
+        Chương sau <i class="fas fa-chevron-right"></i>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Nội dung chương -->
+  <section class="chapter-content">
+    <p th:text="${chapter.content}"></p>
+  </section>
+
+  <!-- Bình luận -->
+  <section class="comment-section">
+    <h2 class="section-title">Bình luận</h2>
+
+    <!-- Form nhập bình luận -->
+    <div th:if="${isAuthenticated}">
+      <form th:action="@{/story/__${story.id}__/chapter/__${chapter.id}__/comment}" method="POST" class="comment-form">
+        <div class="mb-3">
+          <textarea class="form-control" name="content" rows="4" placeholder="Nhập bình luận của bạn..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Gửi bình luận</button>
+      </form>
+    </div>
+    <div th:unless="${isAuthenticated}" class="alert alert-warning">
+      Bạn cần <a th:href="@{/auth/login}">đăng nhập</a> để bình luận.
+    </div>
+
+    <!-- Danh sách bình luận -->
+    <div class="list-group">
+      <div class="comment-item list-group-item" th:each="comment : ${comments}">
+        <div class="d-flex w-100 justify-content-between">
+          <h5 class="mb-1" th:text="${comment.user.fullName} ?: ${comment.user.username}"></h5>
+          <small th:text="${#temporals.format(comment.updatedAt, 'dd/MM/yyyy HH:mm')}"></small>
+        </div>
+        <p class="mb-1" th:text="${comment.content}"></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Bootstrap JS Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

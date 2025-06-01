@@ -138,8 +138,8 @@
         <!-- Main content -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
             <!-- Thông báo -->
-            <div th:if="${param.success}" class="alert alert-success alert-dismissible fade show mt-3" role="alert">
-                <span th:text="${param.success}"></span>
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                <span th:text="${successMessage}"></span>
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
             <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show mt-3" role="alert" th:text="${param.error}">
@@ -235,10 +235,10 @@
                         </td>
                         <td th:text="${#temporals.format(story.createdAt, 'dd/MM/yyyy')}"></td>
                         <td class="action-buttons">
-                            <a th:href="@{/admin/stories/{id}/chapters(id=${story.id})}" class="btn btn-sm btn-outline-info" title="Chapter Management">
+                            <a th:href="@{/admin/stories/{storyId}/chapters(storyId=${story.id})}" class="btn btn-sm btn-outline-info" title="Chapter Management">
                                 <i class="fas fa-book"></i>
                             </a>
-                            <a th:href="@{/admin/stories/edit/{id}(id=${story.id})}" class="btn btn-sm btn-outline-primary" title="Edit">
+                            <a th:href="@{/admin/stories/add/{id}(id=${story.id})}" class="btn btn-sm btn-outline-primary" title="Edit">
                                 <i class="fas fa-edit"></i>
                             </a>
                             <a th:href="@{/admin/stories/delete/{id}(id=${story.id})}"

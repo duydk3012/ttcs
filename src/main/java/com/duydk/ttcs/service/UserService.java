@@ -3,6 +3,7 @@ package com.duydk.ttcs.service;
 import com.duydk.ttcs.dto.*;
 import com.duydk.ttcs.entity.User;
 import com.duydk.ttcs.repository.UserRepository;
+import lombok.Data;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -26,6 +27,7 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Data
 @Service
 @Transactional
 public class UserService {
@@ -71,6 +73,9 @@ public class UserService {
     // Lấy thông tin user hiện tại
     public UserResponseDTO getCurrentUserProfile() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || auth.getName().equals("anonymousUser")) {
+            return null;
+        }
         return getUserProfile(auth.getName());
     }
 

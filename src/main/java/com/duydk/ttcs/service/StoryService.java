@@ -3,16 +3,20 @@ package com.duydk.ttcs.service;
 import com.duydk.ttcs.entity.Story;
 import com.duydk.ttcs.entity.StoryStatus;
 import com.duydk.ttcs.repository.StoryRepository;
+import lombok.Data;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
+@Data
 @Service
 @Transactional
 public class StoryService {
+
 
     private final StoryRepository storyRepository;
     private final GenreService genreService;
@@ -47,5 +51,19 @@ public class StoryService {
             throw new RuntimeException("Story not found");
         }
         storyRepository.deleteById(id);
+    }
+    // Lấy top 10 truyện hot
+    public List<Story> getHotStories() {
+        return storyRepository.findTop10ByOrderByViewsDesc();
+    }
+
+    // Lấy top 10 truyện mới
+    public List<Story> getNewStories() {
+        return storyRepository.findTop10ByOrderByCreatedAtDesc();
+    }
+
+    // Lấy top 10 truyện đã hoàn thành
+    public List<Story> getCompletedStories() {
+        return storyRepository.findTop10ByStatusOrderByViewsDesc(StoryStatus.completed);
     }
 }

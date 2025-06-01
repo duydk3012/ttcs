@@ -3,6 +3,7 @@ package com.duydk.ttcs.controller;
 import com.duydk.ttcs.dto.CreateUserDTO;
 import com.duydk.ttcs.dto.AdminUpdateUserDTO;
 import com.duydk.ttcs.dto.UserResponseDTO;
+import com.duydk.ttcs.entity.Chapter;
 import com.duydk.ttcs.entity.Genre;
 import com.duydk.ttcs.entity.Story;
 import com.duydk.ttcs.entity.StoryStatus;
@@ -17,13 +18,19 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin")
@@ -234,30 +241,23 @@ public class AdminController {
         UserResponseDTO currentUser = userService.getCurrentUserProfile();
         model.addAttribute("currentUser", currentUser);
 
-
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
         Page<Story> storyPage;
 
-        // Xử lý tìm kiếm và lọc
         if (search != null && !search.isEmpty()) {
-            // Tìm kiếm theo tiêu đề
             storyPage = storyService.findByTitleContaining(search, pageable);
         } else if (filter != null && !filter.isEmpty()) {
-            // Lọc theo trạng thái
             try {
                 StoryStatus status = StoryStatus.valueOf(filter);
                 storyPage = storyService.findAllByStatus(status, pageable);
             } catch (IllegalArgumentException e) {
-                // Nếu filter không hợp lệ, trả về tất cả
                 storyPage = storyService.findAllStories(pageable);
                 model.addAttribute("error", "Invalid filter value.");
             }
         } else {
-            // Lấy tất cả truyện
             storyPage = storyService.findAllStories(pageable);
         }
 
-        // Thêm các thuộc tính vào model
         model.addAttribute("stories", storyPage.getContent());
         model.addAttribute("currentPage", storyPage.getNumber());
         model.addAttribute("totalPages", storyPage.getTotalPages());
@@ -265,6 +265,8 @@ public class AdminController {
         model.addAttribute("pageSize", size);
         model.addAttribute("search", search);
         model.addAttribute("currentFilter", filter);
+        model.addAttribute("allGenres", genreService.findAllGenres(Pageable.unpaged()).getContent());
+        model.addAttribute("statusOptions", StoryStatus.values());
 
         return "admin/story/story-list";
     }
@@ -274,41 +276,154 @@ public class AdminController {
         UserResponseDTO currentUser = userService.getCurrentUserProfile();
         model.addAttribute("currentUser", currentUser);
 
+        Story story = new Story();
+        model.addAttribute("story", story);
+        model.addAttribute("allGenres", genreService.findAllGenres(Pageable.unpaged()).getContent());
+        model.addAttribute("statusOptions", StoryStatus.values());
+
         return "admin/story/story-form";
     }
 
-    @PostMapping("/stories/add")
-    public String addStory(Model model) {
+    @PostMapping("/stories/save")
+    public String saveStory(@ModelAttribute("story") Story story) {
+        try {
+            if (story.getId() == null) {
+                story.setCreatedAt(LocalDateTime.now());
+            }
+            story.setUpdatedAt(LocalDateTime.now());
 
-        return "redirect:/admin/stories";
+            storyService.saveStory(story);
+            return "redirect:/admin/stories?success=Story saved successfully!";
+        } catch (Exception e) {
+            if (story.getId() == null) {
+                return "redirect:/admin/stories/add?error=Failed to save story!";
+            } else {
+                return "redirect:/admin/stories/add/"+story.getId()+"?error=Failed to save story!";
+            }
+        }
     }
 
-    @GetMapping("/stories/edit/{id}")
+    @GetMapping("/stories/add/{id}")
     public String editStoryForm(@PathVariable Long id, Model model) {
         UserResponseDTO currentUser = userService.getCurrentUserProfile();
         model.addAttribute("currentUser", currentUser);
 
+        Optional<Story> story = storyService.findStoryById(id);
+
+        model.addAttribute("story", story.get());
+        model.addAttribute("allGenres", genreService.getGenreRepository().findAll());
+        model.addAttribute("statusOptions", StoryStatus.values());
 
         return "admin/story/story-form";
     }
 
-    @PostMapping("/stories/edit/{id}")
-    public String editStory(@PathVariable Long id, Model model) {
-
+    @GetMapping("/stories/delete/{id}")
+    public String deleteStory(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            storyService.deleteStory(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Story deleted successfully!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to delete story: " + e.getMessage());
+        }
         return "redirect:/admin/stories";
     }
 
-    @GetMapping("/stories/delete")
-    public String deleteStory(@RequestParam("id") Long id) {
+    // Chapter Management
+
+    @GetMapping("/stories/{storyId}/chapters")
+    public String listChapters(
+            @PathVariable Long storyId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Model model) {
+
+        UserResponseDTO currentUser = userService.getCurrentUserProfile();
+        model.addAttribute("currentUser", currentUser);
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("chapterNumber").ascending());
+        Page<Chapter> chapterPage = chapterService.findAllChaptersByStoryId(storyId, pageable);
+
+        Story story = storyService.findStoryById(storyId).get();
+        model.addAttribute("story", story);
+
+        model.addAttribute("chapters", chapterPage.getContent());
+        model.addAttribute("currentPage", chapterPage.getNumber());
+        model.addAttribute("totalPages", chapterPage.getTotalPages());
+        model.addAttribute("totalItems", chapterPage.getTotalElements());
+        model.addAttribute("pageSize", size);
+
+        return "/admin/chapter/chapter-list";
+
+    }
+
+    @GetMapping("/stories/{storyId}/chapters/add")
+    public String addChapterForm(
+            @PathVariable Long storyId,
+            Model model) {
+        UserResponseDTO currentUser = userService.getCurrentUserProfile();
+        model.addAttribute("currentUser", currentUser);
+        model.addAttribute("story", storyService.findStoryById(storyId).get());
+
+        model.addAttribute("chapter", new Chapter());
+
+        return "admin/chapter/chapter-form";
+    }
+
+    @GetMapping("/stories/{storyId}/chapters/add/{id}")
+    public String editChapterForm(
+            @PathVariable Long storyId,
+            @PathVariable Long id,
+            Model model) {
+        UserResponseDTO currentUser = userService.getCurrentUserProfile();
+        model.addAttribute("currentUser", currentUser);
+        model.addAttribute("story", storyService.findStoryById(storyId).get());
+
+        Optional<Chapter> chapterOpt = chapterService.findChapterById(id);
+        if (chapterOpt.isEmpty()) {
+            return "redirect:/admin/stories/"+storyId+"/chapters?error=Chapter not found";
+        }
+        model.addAttribute("chapter", chapterOpt.get());
+        return "admin/chapter/chapter-form";
+
+    }
+
+    @PostMapping("/stories/{storyId}/chapters/save")
+    public String saveChapter(
+            @PathVariable Long storyId,
+            @ModelAttribute("chapter") Chapter chapter) {
+        if (chapter.getStory() == null) {
+            chapter.setStory(storyService.findStoryById(storyId).get());
+        }
         try {
-            storyService.deleteStory(id);
-            return "redirect:/admin/stories?success";
+            chapterService.saveChapter(chapter);
+            if (chapter.getId() != null) {
+                return "redirect:/admin/stories/"+storyId+"/chapters?success=Genre added successfully!";
+            } else {
+                return "redirect:/admin/stories/"+storyId+"/chapters?success=Genre updated successfully!";
+            }
         } catch (Exception e) {
-            return "redirect:/admin/stories?error";
+            if (chapter.getId() != null) {
+                return "redirect:/admin/stories/"+storyId+"/chapters/add/"+chapter.getId()+"?error=An error occurred while adding the genre!";
+            } else {
+                return "redirect:/admin/stories/"+storyId+"/chapters?error=An error occurred while updating the genre!";
+            }
         }
     }
 
-    // Chapter Management
+
+    @GetMapping("/stories/{storyId}/chapters/delete/{id}")
+    public String deleteChapter(
+            @PathVariable Long storyId,
+            @PathVariable Long id,
+            RedirectAttributes redirectAttributes) {
+        try {
+            chapterService.deleteChapter(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Chapter deleted successfully!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to delete story: " + e.getMessage());
+        }
+        return "redirect:/admin/stories/{storyId}/chapters";
+    }
 
 
     // Genre Management

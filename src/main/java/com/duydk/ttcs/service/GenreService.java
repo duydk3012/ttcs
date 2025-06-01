@@ -2,6 +2,7 @@ package com.duydk.ttcs.service;
 
 import com.duydk.ttcs.entity.Genre;
 import com.duydk.ttcs.repository.GenreRepository;
+import lombok.Data;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -9,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
+@Data
 @Service
 @Transactional
 public class GenreService {
@@ -39,4 +41,5 @@ public class GenreService {
         }
         genreRepository.deleteById(id);
     }
+
 }

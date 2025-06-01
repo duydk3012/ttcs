@@ -4,8 +4,69 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Profile</title>
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
+        /* Style cho header */
+        header.navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .navbar-brand.logo {
+            flex-shrink: 0;
+            margin-right: auto;
+        }
+
+        .toggle-btn {
+            flex-shrink: 0;
+            z-index: 10;
+            order: -1;
+        }
+
+        .user-dropdown {
+            flex-shrink: 0;
+            margin-left: auto;
+        }
+
+        @media (max-width: 767.98px) {
+            .navbar-brand.logo {
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            .toggle-btn {
+                margin-right: auto;
+                margin-left: 0;
+            }
+            .user-dropdown {
+                margin-left: 0;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .toggle-btn,
+            .user-dropdown {
+                display: none !important;
+            }
+            .navbar-brand.logo {
+                position: static;
+                transform: none;
+                margin: 0 auto;
+            }
+        }
+
+        .navbar-brand.logo img {
+            max-width: 100%;
+            height: auto;
+        }
+
         .profile-container {
             max-width: 800px;
             margin: 0 auto;
@@ -69,12 +130,9 @@
     </style>
 </head>
 <body>
-<header>
-    <a th:href="@{/}">
-        <button>HOME</button>
-    </a>
-    <hr>
-</header>
+<!-- Header -->
+<div th:replace="~{fragments/header :: header}"></div>
+
 <div class="container py-5 profile-container">
     <!-- Thông báo -->
     <div th:if="${param.success}" class="alert alert-success alert-dismissible fade show">

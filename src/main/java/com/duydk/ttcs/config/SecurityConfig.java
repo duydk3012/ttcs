@@ -30,7 +30,7 @@ public class SecurityConfig {
 
         http.authorizeHttpRequests(configurer ->
                 configurer
-                        .requestMatchers("/", "/home", "/auth/**", "/public/**").permitAll()
+                        .requestMatchers("/", "/home", "/auth/**", "/story/**","/images/**").permitAll()
                         .requestMatchers("/user/**").hasRole("USER")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
@@ -43,7 +43,7 @@ public class SecurityConfig {
                         .permitAll()
                 )
                 .logout(logout -> logout
-                        .logoutSuccessUrl("/auth/login?logout")
+                        .logoutSuccessUrl("/")
                         .permitAll()
                 );
 

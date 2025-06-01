@@ -1,110 +1,291 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${story.id} ? 'Chỉnh sửa Truyện' : 'Thêm Truyện Mới'"></title>
+    <title th:text="${story.id} ? 'Edit Story' : 'Add New Story'"></title>
+
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- Custom CSS -->
-    <link th:href="@{/css/styles.css}" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        /* Kế thừa các style từ dashboard */
+        .sidebar {
+            min-height: 100vh;
+            background-color: #343a40;
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.75);
+        }
+        .sidebar .nav-link:hover {
+            color: rgba(255, 255, 255, 1);
+        }
+        .sidebar .nav-link.active {
+            color: white;
+            font-weight: bold;
+        }
+        .main-content {
+            padding: 20px;
+        }
+        /* Style cho header */
+        header.navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+        .navbar-brand.logo {
+            flex-shrink: 0;
+            margin-right: auto;
+        }
+        .toggle-btn {
+            flex-shrink: 0;
+            z-index: 10;
+            order: -1;
+        }
+        .user-dropdown {
+            flex-shrink: 0;
+            margin-left: auto;
+        }
+        @media (max-width: 767.98px) {
+            .navbar-brand.logo {
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            .toggle-btn {
+                margin-right: auto;
+                margin-left: 0;
+            }
+            .user-dropdown {
+                margin-left: 0;
+            }
+        }
+        @media (max-width: 576px) {
+            .toggle-btn,
+            .user-dropdown {
+                display: none !important;
+            }
+            .navbar-brand.logo {
+                position: static;
+                transform: none;
+                margin: 0 auto;
+            }
+        }
+        .navbar-brand.logo img {
+            max-width: 100%;
+            height: auto;
+        }
+        /* Style riêng cho trang stories */
+        .story-cover {
+            width: 40px;
+            height: 40px;
+            border-radius: 10%;
+            object-fit: cover;
+        }
+        .action-buttons .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        .status-badge {
+            font-size: 0.8rem;
+        }
+        .search-box {
+            max-width: 300px;
+        }
+        .truncate {
+            max-width: 300px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Pagination CSS */
+        .pagination-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .page-input-group {
+            display: flex;
+            align-items: center;
+            margin: 0 15px;
+        }
+        .page-input-group input {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            border-right: none;
+        }
+        .page-input-group button {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        .cover-preview {
+            max-width: 200px;
+            max-height: 300px;
+            margin-top: 10px;
+        }
+        .select2-container--default .select2-selection--multiple {
+            min-height: 38px;
+            border: 1px solid #ced4da;
+        }
+    </style>
 </head>
 <body>
-<div class="d-flex">
-    <!-- Sidebar -->
-    <th:block th:replace="~{admin/fragments/sidebar :: sidebar}"></th:block>
+<!-- Header -->
+<div th:replace="~{admin/fragments/header :: header}"></div>
 
-    <!-- Main content -->
-    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-        <div class="pt-3 pb-2 mb-3 border-bottom">
-            <h2 th:text="${story.id} ? 'Chỉnh sửa Truyện' : 'Thêm Truyện Mới'"></h2>
-        </div>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div th:replace="~{admin/fragments/sidebar :: sidebar}"></div>
 
-        <form th:action="@{/admin/stories/save}" th:object="${story}" method="post" id="storyForm">
-            <input type="hidden" th:field="*{id}">
-            <input type="hidden" th:field="*{chapterCount}">
-            <input type="hidden" th:field="*{latestChapterNumber}">
-
-            <div class="mb-3">
-                <label for="title" class="form-label">Tiêu đề <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="title" th:field="*{title}"
-                       placeholder="Nhập tiêu đề truyện" required>
-                <div class="invalid-feedback" th:errors="*{title}">Vui lòng nhập tiêu đề.</div>
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+            <!-- Thông báo -->
+            <div th:if="${param.success}" class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                <span th:text="${param.success}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                <span th:text="${param.error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
 
-            <div class="mb-3">
-                <label for="author" class="form-label">Tác giả</label>
-                <input type="text" class="form-control" id="author" th:field="*{author}"
-                       placeholder="Nhập tên tác giả">
-            </div>
+            <!-- Story Form -->
+            <form th:action="@{/admin/stories/save}" th:object="${story}" method="post">
+                <!-- Hidden fields -->
+                <input type="hidden" th:field="*{id}">
+                <input type="hidden" th:field="*{createdAt}">
+                <input type="hidden" th:field="*{updatedAt}">
+                <input type="hidden" th:field="*{views}">
 
-            <div class="mb-3">
-                <label for="description" class="form-label">Mô tả</label>
-                <textarea class="form-control" id="description" th:field="*{description}"
-                          rows="5" placeholder="Nhập mô tả truyện"></textarea>
-            </div>
-
-            <div class="mb-3">
-                <label for="coverImgUrl" class="form-label">URL ảnh bìa</label>
-                <input type="url" class="form-control" id="coverImgUrl" th:field="*{coverImgUrl}"
-                       placeholder="Nhập URL ảnh bìa" oninput="previewImage(this)">
-                <img id="coverImagePreview" class="cover-image-preview"
-                     th:src="${story.coverImgUrl} ?: ''"
-                     th:classappend="${story.coverImgUrl} ? 'visible' : ''">
-            </div>
-
-            <div class="mb-3">
-                <label for="genres" class="form-label">Thể loại</label>
-                <div class="relative">
-                    <input type="hidden" id="genres" name="genres" th:value="${selectedGenreIds}">
-                    <div id="selectedGenres" class="flex flex-wrap items-center gap-2 p-2 border border-gray-300 rounded-md bg-white min-h-[42px] cursor-text hover:border-gray-400 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-colors duration-150">
-                        <div id="selectedTags" class="flex flex-wrap gap-2"></div>
-                        <input type="text" id="genreSearch" class="flex-grow min-w-[100px] p-1 text-sm border-none bg-transparent focus:outline-none" placeholder="Chọn thể loại...">
-                    </div>
-                    <div id="genreDropdown" class="dropdown-menu w-100 mt-1 shadow-lg max-h-60 overflow-y-auto" style="display: none;">
-                        <ul id="genreList" class="list-unstyled divide-y divide-gray-200">
-                            <li th:each="genre : ${genres}"
-                                class="p-2 hover:bg-blue-100 cursor-pointer transition-colors duration-100"
-                                th:data-id="${genre.id}"
-                                th:data-name="${genre.name}"
-                                th:text="${genre.name}"></li>
-                            <li th:if="${#lists.isEmpty(genres)}" class="p-2 text-center text-gray-500 text-sm">
-                                Không có thể loại nào
-                            </li>
-                        </ul>
-                        <div id="noResults" class="p-2 text-center text-gray-500 text-sm" style="display: none;">
-                            Không tìm thấy thể loại phù hợp
-                        </div>
+                <!-- Cover Image -->
+                <div class="mb-3 row">
+                    <label for="coverImage" class="col-sm-2 col-form-label">Cover Image URL</label>
+                    <div class="col-sm-10">
+                        <input type="url" class="form-control" id="coverImage" th:field="*{coverImage}"
+                               placeholder="Enter image URL" oninput="updateCoverPreview(this.value)">
+                        <img id="coverPreview" th:src="*{coverImage}" class="cover-preview"
+                             style="display: none;" alt="Cover Preview">
                     </div>
                 </div>
-            </div>
 
-            <div class="mb-3">
-                <label for="status" class="form-label">Trạng thái</label>
-                <select class="form-select" id="status" th:field="*{status}">
-                    <option value="" selected>Chọn trạng thái</option>
-                    <option value="ongoing" th:selected="*{status} == 'ongoing'">Đang tiến hành</option>
-                    <option value="completed" th:selected="*{status} == 'completed'">Hoàn thành</option>
-                    <option value="hiatus" th:selected="*{status} == 'hiatus'">Tạm dừng</option>
-                    <option value="cancelled" th:selected="*{status} == 'cancelled'">Hủy bỏ</option>
-                </select>
-            </div>
+                <!-- Title -->
+                <div class="mb-3 row">
+                    <label for="title" class="col-sm-2 col-form-label">Title</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="title" th:field="*{title}" required>
+                    </div>
+                </div>
 
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Lưu</button>
-                <a th:href="@{/admin/stories}" class="btn btn-secondary"><i class="bi bi-x-circle"></i> Hủy</a>
-            </div>
-        </form>
-    </main>
+                <!-- Author -->
+                <div class="mb-3 row">
+                    <label for="author" class="col-sm-2 col-form-label">Author</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="author" th:field="*{author}">
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="mb-3 row">
+                    <label for="description" class="col-sm-2 col-form-label">Description</label>
+                    <div class="col-sm-10">
+                        <textarea class="form-control" id="description" th:field="*{description}" rows="5"></textarea>
+                    </div>
+                </div>
+
+                <!-- Genres -->
+                <div class="mb-3 row">
+                    <label for="genres" class="col-sm-2 col-form-label">Genres</label>
+                    <div class="col-sm-10">
+                        <select class="form-control select2-multiple" id="genres" name="genreIds" multiple="multiple">
+                            <option th:each="genre : ${allGenres}"
+                                    th:value="${genre.id}"
+                                    th:text="${genre.name}"
+                                    th:selected="${selectedGenreIds != null && selectedGenreIds.contains(genre.id)}">
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Status (only visible when editing) -->
+                <div class="mb-3 row" th:if="${story.id} != null">
+                    <label for="status" class="col-sm-2 col-form-label">Status</label>
+                    <div class="col-sm-10">
+                        <select class="form-control" id="status" th:field="*{status}">
+                            <option th:each="status : ${statusOptions}"
+                                    th:value="${status}"
+                                    th:text="${status.name()}">
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Views (only visible when editing) -->
+                <div class="mb-3 row" th:if="${story.id} != null">
+                    <label class="col-sm-2 col-form-label">Views</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" th:value="*{views}" readonly>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="mb-3 row">
+                    <div class="col-sm-10 offset-sm-2">
+                        <button type="submit" class="btn btn-primary" th:text="${story.id} ? 'Save Changes' : 'Create'"></button>
+                        <a th:href="@{/admin/stories}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </div>
+            </form>
+        </main>
+    </div>
 </div>
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<!-- Custom JS -->
-<script th:src="@{/js/scripts.js}"></script>
+<!-- Bootstrap JS Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
+<script>
+    // Initialize Select2 for genres
+    $(document).ready(function() {
+        $('.select2-multiple').select2({
+            placeholder: "Select genres",
+            allowClear: true
+        });
+    });
 
+    // Update cover preview
+    function updateCoverPreview(url) {
+        const preview = document.getElementById('coverPreview');
+        if (url) {
+            preview.src = url;
+            preview.style.display = 'block';
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+
+    // Initialize cover preview on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const coverUrl = document.getElementById('coverImage').value;
+        updateCoverPreview(coverUrl);
+    });
+
+    $(document).ready(function() {
+        $('.select2-multiple').select2({
+            placeholder: "Select genres",
+            allowClear: true,
+            width: '100%'
+        });
+    });
+</script>
 </body>
 </html>

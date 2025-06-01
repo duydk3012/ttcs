@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <title th:text="${story.title} + ' - Story Clone'">Story Clone</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    /* Header styles */
+    .navbar {
+      padding: 0.5rem 1rem;
+    }
+
+    .user-dropdown .dropdown-toggle {
+      padding: 0.25rem 0.5rem;
+    }
+
+    .user-dropdown img {
+      width: 32px;
+      height: 32px;
+      object-fit: cover;
+    }
+
+    .logo img {
+      transition: transform 0.3s ease;
+    }
+
+    .logo:hover img {
+      transform: scale(1.05);
+    }
+    /* Style cho ảnh bìa */
+    .cover-image {
+      width: 300px;
+      height: 400px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    /* Style cho danh sách chương */
+    .chapter-table {
+      margin-top: 20px;
+    }
+
+    /* Style cho phân trang */
+    .pagination {
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    /* Style cho bình luận */
+    .comment-section {
+      margin-top: 30px;
+    }
+
+    .comment-item {
+      padding: 10px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .comment-form {
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 5px;
+      margin-bottom: 20px;
+    }
+
+    /* Thêm style mới */
+    .story-info {
+      min-height: 400px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .story-description {
+      max-height: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 5;
+      -webkit-box-orient: vertical;
+    }
+
+    .action-buttons {
+      margin-top: auto;
+      padding-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+<!-- Header -->
+<div th:replace="~{fragments/header :: header}"></div>
+
+<!-- Phần nội dung chính -->
+<main class="container my-4">
+  <!-- Thông tin truyện -->
+  <section>
+    <h2 class="section-title" th:text="${story.title}">Tên truyện</h2>
+    <div class="row">
+      <div class="col-md-5 d-flex justify-content-center">
+        <!-- Ảnh bìa -->
+        <img th:src="${story.coverImage}" alt="Cover" class="cover-image">
+      </div>
+      <div class="col-md-7 story-info">
+        <!-- Thông tin chi tiết -->
+        <div>
+          <p><strong>Tác giả:</strong> <span th:text="${story.author}"></span></p>
+          <p><strong>Tổng số chương:</strong> <span th:text="${#lists.size(story.chapters)}"></span></p>
+          <p><strong>Lượt xem:</strong> <span th:text="${story.views}"></span></p>
+          <p><strong>Trạng thái:</strong>
+            <span th:if="${story.status.name() == 'completed'}" class="badge bg-success">Completed</span>
+            <span th:if="${story.status.name() == 'ongoing'}" class="badge bg-warning">Ongoing</span>
+            <span th:if="${story.status.name() == 'dropped'}" class="badge bg-danger">Dropped</span>
+          </p>
+          <div th:unless="${story.description == null}">
+            <p><strong>Mô tả:</strong></p>
+            <p class="story-description" th:text="${story.description}"></p>
+          </div>
+        </div>
+
+        <!-- Nút hành động -->
+        <div class="action-buttons" th:if="${firstChapterId != null and lastChapterId != null}">
+          <a class="btn btn-primary me-2" th:href="@{/story/__${story.id}__/chapter/__${firstChapterId}__}">Đọc từ đầu</a>
+          <a class="btn btn-success" th:href="@{/story/__${story.id}__/chapter/__${lastChapterId}__}">Đọc chương mới nhất</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Danh sách chương -->
+  <section class="chapter-table">
+    <h2 class="section-title">Danh sách chương</h2>
+    <table class="table table-striped">
+      <thead>
+      <tr>
+        <th scope="col">Số chương</th>
+        <th scope="col">Tiêu đề</th>
+        <th scope="col">Thời gian cập nhật</th>
+      </tr>
+      </thead>
+      <tbody>
+      <!-- Lặp qua danh sách chương với phân trang -->
+      <tr th:each="chapter : ${chapters.content}">
+        <td><a th:href="@{/story/__${story.id}__/chapter/__${chapter.id}__}" th:text="'Chương ' + ${chapter.chapterNumber}"></a></td>
+        <td th:text="${chapter.title}"></td>
+        <td th:text="${#temporals.format(chapter.updatedAt, 'dd/MM/yyyy HH:mm')}"></td>
+      </tr>
+      </tbody>
+    </table>
+
+    <!-- Phân trang -->
+    <nav aria-label="Chapter pagination" th:if="${not chapters.empty}">
+      <ul class="pagination">
+        <!-- Nút Previous -->
+        <li class="page-item" th:classappend="${chapters.first} ? 'disabled'">
+          <a class="page-link" th:href="@{/story/__${story.id}__(page=${chapters.number - 1})}">Previous</a>
+        </li>
+        <!-- Các trang -->
+        <li class="page-item" th:each="i : ${#numbers.sequence(0, chapters.totalPages - 1)}"
+            th:classappend="${i == chapters.number} ? 'active'">
+          <a class="page-link" th:href="@{/story/__${story.id}__(page=${i})}" th:text="${i + 1}"></a>
+        </li>
+        <!-- Nút Next -->
+        <li class="page-item" th:classappend="${chapters.last} ? 'disabled'">
+          <a class="page-link" th:href="@{/story/__${story.id}__(page=${chapters.number + 1})}">Next</a>
+        </li>
+      </ul>
+    </nav>
+  </section>
+
+  <!-- Bình luận -->
+  <section class="comment-section">
+    <h2 class="section-title">Bình luận</h2>
+
+    <!-- Form nhập bình luận -->
+    <div th:if="${isAuthenticated}">
+      <form th:action="@{/story/__${story.id}__/comment}" method="POST" class="comment-form">
+        <div class="mb-3">
+          <textarea class="form-control" name="content" rows="4" placeholder="Nhập bình luận của bạn..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Gửi bình luận</button>
+      </form>
+    </div>
+    <div th:unless="${isAuthenticated}" class="alert alert-warning">
+      Bạn cần <a th:href="@{/auth/login}">đăng nhập</a> để bình luận.
+    </div>
+
+    <!-- Danh sách bình luận -->
+    <div class="list-group">
+      <div class="comment-item list-group-item" th:each="comment : ${comments}">
+        <div class="d-flex w-100 justify-content-between">
+          <h5 class="mb-1" th:text="${comment.user.fullName} ?: ${comment.user.username}"></h5>
+          <small th:text="${#temporals.format(comment.updatedAt, 'dd/MM/yyyy HH:mm')}"></small>
+        </div>
+        <p class="mb-1" th:text="${comment.content}"></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Bootstrap JS Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
