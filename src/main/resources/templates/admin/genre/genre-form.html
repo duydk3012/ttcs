@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${genre.id} ? 'Edit Genre' : 'Add New Genre'"></title>
+
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <style>
+        /* Kế thừa các style từ dashboard */
+        .sidebar {
+            min-height: 100vh;
+            background-color: #343a40;
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.75);
+        }
+        .sidebar .nav-link:hover {
+            color: rgba(255, 255, 255, 1);
+        }
+        .sidebar .nav-link.active {
+            color: white;
+            font-weight: bold;
+        }
+        .main-content {
+            padding: 20px;
+        }
+        /* Style cho header */
+        header.navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+        .navbar-brand.logo {
+            flex-shrink: 0;
+            margin-right: auto;
+        }
+        .toggle-btn {
+            flex-shrink: 0;
+            z-index: 10;
+            order: -1;
+        }
+        .user-dropdown {
+            flex-shrink: 0;
+            margin-left: auto;
+        }
+        @media (max-width: 767.98px) {
+            .navbar-brand.logo {
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            .toggle-btn {
+                margin-right: auto;
+                margin-left: 0;
+            }
+            .user-dropdown {
+                margin-left: 0;
+            }
+        }
+        @media (max-width: 576px) {
+            .toggle-btn,
+            .user-dropdown {
+                display: none !important;
+            }
+            .navbar-brand.logo {
+                position: static;
+                transform: none;
+                margin: 0 auto;
+            }
+        }
+        .navbar-brand.logo img {
+            max-width: 100%;
+            height: auto;
+        }
+        .action-buttons .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        .search-box {
+            max-width: 300px;
+        }
+        .truncate {
+            max-width: 300px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body>
+<!-- Header -->
+<div th:replace="~{admin/fragments/header :: header}"></div>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div th:replace="~{admin/fragments/sidebar :: sidebar}"></div>
+
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+            <!-- Thông báo -->
+            <div th:if="${param.sucess}" class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                <span th:text="${param.sucess}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show mt-3" role="alert" th:text="${param.error}">
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <!-- Tiêu đề -->
+            <div class="form-header">
+                <h2 th:text="${genre.id} ? 'Edit Genre' : 'Add New Genre'"></h2>
+            </div>
+            <!-- Genre Form -->
+            <div class="form-container">
+                <div class="profile-content">
+                    <div class="profile-info">
+                        <form th:action="@{/admin/genres/save}" th:object="${genre}" method="post">
+                            <!-- Thêm trường hidden cho ID -->
+                            <input type="hidden" th:field="*{id}">
+
+                            <!-- Name -->
+                            <div class="mb-3 row">
+                                <label for="name" class="col-sm-3 col-form-label">Name</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" id="name" th:field="*{name}" required>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                                </div>
+                            </div>
+                            <!-- Description -->
+                            <div class="mb-3 row">
+                                <label for="description" class="col-sm-3 col-form-label">Description (Optional)</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control" id="description" th:field="*{description}">
+                                </div>
+                            </div>
+                            <!-- Action Buttons -->
+                            <div class="action-buttons">
+                                <button type="submit" class="btn btn-primary" th:text="${genre.id} ? 'Save Changes' : 'Create'"></button>
+                                <a th:href="@{/admin/genres}" class="btn btn-secondary">Cancel</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Custom JS -->
+<script th:src="@{/js/scripts.js}"></script>
+</body>
+</html>

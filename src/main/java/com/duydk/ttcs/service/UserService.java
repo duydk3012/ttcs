@@ -1,25 +1,26 @@
 package com.duydk.ttcs.service;
 
 import com.duydk.ttcs.dto.*;
-import com.duydk.ttcs.model.User;
+import com.duydk.ttcs.entity.User;
 import com.duydk.ttcs.repository.UserRepository;
-import lombok.Data;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.multipart.MultipartFile;
+
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
@@ -27,7 +28,6 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
-@Data
 public class UserService {
 
     private final UserRepository userRepository;
@@ -55,12 +55,10 @@ public class UserService {
             bindingResult.rejectValue("email", "exists", "Email already exists");
         }
 
-        // Nếu có lỗi thì dừng lại, không đăng ký
         if (bindingResult.hasErrors()) {
             return;
         }
 
-        // Tiến hành đăng ký nếu không có lỗi
         User user = new User();
         user.setUsername(registerDTO.getUsername());
         user.setEmail(registerDTO.getEmail());
@@ -70,7 +68,7 @@ public class UserService {
         userRepository.save(user);
     }
 
-    // Lấy thông tin user hiện tại (cho profile)
+    // Lấy thông tin user hiện tại
     public UserResponseDTO getCurrentUserProfile() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return getUserProfile(auth.getName());
@@ -83,62 +81,47 @@ public class UserService {
         return convertToDTO(user);
     }
 
-    /**
-     * Cập nhật thông tin người dùng bởi admin
-     * @param userId ID của người dùng
-     * @param updateDTO DTO chứa thông tin cập nhật
-     */
-    public void updateUserProfile(String userId, AdminUpdateUserDTO updateDTO) {
-        User user = userRepository.findById(Long.parseLong(userId))
+    // Cập nhật thông tin người dùng bởi admin
+    public void updateUserProfile(Long id, AdminUpdateUserDTO updateDTO) {
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Cập nhật fullName nếu có giá trị
-        if (updateDTO.getFullName() != null) {
+        if (updateDTO.getFullName() != null && !updateDTO.getFullName().isEmpty()) {
             user.setFullName(updateDTO.getFullName());
         }
 
-        // Cập nhật email nếu có giá trị và không trùng
-        if (updateDTO.getEmail() != null && !updateDTO.getEmail().isEmpty() && !updateDTO.getEmail().equals(user.getEmail())) {
-            if (userRepository.existsByEmail(updateDTO.getEmail())) {
-                throw new RuntimeException("Email already exists");
+        if (updateDTO.getEmail() != null && !updateDTO.getEmail().isEmpty()) {
+            if (!updateDTO.getEmail().equals(user.getEmail())) {
+                if (userRepository.existsByEmail(updateDTO.getEmail())) {
+                    throw new RuntimeException("Email already exists");
+                }
+                user.setEmail(updateDTO.getEmail());
             }
-            user.setEmail(updateDTO.getEmail());
         }
 
-        // Chỉ cập nhật mật khẩu nếu newPassword không rỗng
         if (updateDTO.getNewPassword() != null && !updateDTO.getNewPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(updateDTO.getNewPassword()));
         }
 
-        // Cập nhật trạng thái
         user.setEnabled(updateDTO.isEnabled());
 
-        // Lưu thông tin vào database
         userRepository.save(user);
     }
 
-    /**
-     * Cập nhật thông tin profile cho user đang đăng nhập
-     * @param updateDTO DTO chứa thông tin cập nhật
-     */
+    // Cập nhật thông tin profile cho user đang đăng nhập
     public void updateCurrentUserProfile(UpdateProfileDTO updateDTO) {
-        // Lấy thông tin user đang đăng nhập từ SecurityContext
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Chỉ cập nhật fullName nếu có giá trị (không null và không rỗng)
         if (updateDTO.getFullName() != null && !updateDTO.getFullName().isEmpty()) {
             user.setFullName(updateDTO.getFullName());
         }
 
-        // Chỉ cập nhật email nếu có giá trị (không null và không rỗng)
         if (updateDTO.getEmail() != null && !updateDTO.getEmail().isEmpty()) {
-            // Kiểm tra email mới có trùng với email hiện tại không
             if (!updateDTO.getEmail().equals(user.getEmail())) {
-                // Kiểm tra email đã tồn tại chưa
                 if (userRepository.existsByEmail(updateDTO.getEmail())) {
                     throw new RuntimeException("Email already exists");
                 }
@@ -149,39 +132,28 @@ public class UserService {
         userRepository.save(user);
     }
 
-    /**
-     * Cập nhật avatar cho user hiện tại
-     * @param avatarFile File avatar upload
-     * @throws IOException nếu có lỗi khi lưu file
-     */
+    // Cập nhật avatar cho user hiện tại
     public void updateUserAvatar(MultipartFile avatarFile) throws IOException {
-        // Lấy thông tin user đang đăng nhập
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Validate file
         if (avatarFile.isEmpty()) {
             throw new RuntimeException("Please select a file to upload");
         }
 
-        // Lấy phần mở rộng của file
         String originalFilename = avatarFile.getOriginalFilename();
         String fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
 
-        // Tạo filename theo username
         String filename = username + fileExtension;
 
-        // Đường dẫn thư mục lưu avatar
         Path uploadPath = Paths.get("src/main/resources/static/images/avatar");
 
-        // Tạo thư mục nếu chưa tồn tại
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
         }
 
-        // Xóa avatar cũ nếu tồn tại
         Files.list(uploadPath)
                 .filter(path -> path.getFileName().toString().startsWith(username + "."))
                 .forEach(path -> {
@@ -192,51 +164,36 @@ public class UserService {
                     }
                 });
 
-        // Resize ảnh nếu cần (giới hạn 800x800)
         BufferedImage resizedImage = resizeImage(avatarFile, 800, 800);
 
-        // Lưu ảnh đã resize
         Path filePath = uploadPath.resolve(filename);
         ImageIO.write(resizedImage, fileExtension.substring(1), filePath.toFile());
         Files.copy(avatarFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-        // Cập nhật đường dẫn avatar vào database
         user.setAvatarUrl("/images/avatar/" + filename);
         userRepository.save(user);
     }
 
-    /**
-     * Cập nhật avatar cho người dùng theo ID
-     * @param userId ID của người dùng
-     * @param avatarFile File avatar upload
-     * @throws IOException nếu có lỗi khi lưu file
-     */
+    // Cập nhật avatar cho người dùng theo ID
     public void updateUserAvatarById(Long userId, MultipartFile avatarFile) throws IOException {
-        // Tìm người dùng theo ID
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Validate file
         if (avatarFile.isEmpty()) {
             throw new RuntimeException("Please select a file to upload");
         }
 
-        // Lấy phần mở rộng của file
         String originalFilename = avatarFile.getOriginalFilename();
         String fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
 
-        // Tạo filename theo username
         String filename = user.getUsername() + fileExtension;
 
-        // Đường dẫn thư mục lưu avatar
         Path uploadPath = Paths.get("src/main/resources/static/images/avatar");
 
-        // Tạo thư mục nếu chưa tồn tại
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
         }
 
-        // Xóa avatar cũ nếu tồn tại
         Files.list(uploadPath)
                 .filter(path -> path.getFileName().toString().startsWith(user.getUsername() + "."))
                 .forEach(path -> {
@@ -247,62 +204,42 @@ public class UserService {
                     }
                 });
 
-        // Resize ảnh nếu cần (giới hạn 800x800)
         BufferedImage resizedImage = resizeImage(avatarFile, 800, 800);
 
-        // Lưu ảnh đã resize
         Path filePath = uploadPath.resolve(filename);
         ImageIO.write(resizedImage, fileExtension.substring(1), filePath.toFile());
         Files.copy(avatarFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-        // Cập nhật đường dẫn avatar vào database
         user.setAvatarUrl("/images/avatar/" + filename);
         userRepository.save(user);
     }
 
-    /**
-     * Đổi mật khẩu cho user
-     * @param currentPassword Mật khẩu hiện tại
-     * @param newPassword Mật khẩu mới
-     */
+    // Đổi mật khẩu cho user
     public void changePassword(String currentPassword, String newPassword) {
-        // Lấy thông tin user đang đăng nhập
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Kiểm tra mật khẩu hiện tại
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
             throw new RuntimeException("Current password is incorrect");
         }
 
-        // Validate mật khẩu mới
         if (newPassword.length() < 6) {
             throw new RuntimeException("Password must be at least 6 characters");
         }
 
-        // Mã hóa và lưu mật khẩu mới
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
 
-    /**
-     * Resize ảnh nếu kích thước quá lớn
-     * @param originalFile Ảnh gốc
-     * @param maxWidth Chiều rộng tối đa
-     * @param maxHeight Chiều cao tối đa
-     * @return File ảnh đã resize
-     */
     private BufferedImage resizeImage(MultipartFile originalFile, int maxWidth, int maxHeight) throws IOException {
         BufferedImage originalImage = ImageIO.read(originalFile.getInputStream());
 
-        // Kiểm tra nếu ảnh nhỏ hơn kích thước tối đa thì không resize
         if (originalImage.getWidth() <= maxWidth && originalImage.getHeight() <= maxHeight) {
             return originalImage;
         }
 
-        // Tính toán kích thước mới
         double widthRatio = (double) maxWidth / originalImage.getWidth();
         double heightRatio = (double) maxHeight / originalImage.getHeight();
         double ratio = Math.min(widthRatio, heightRatio);
@@ -310,7 +247,6 @@ public class UserService {
         int newWidth = (int) (originalImage.getWidth() * ratio);
         int newHeight = (int) (originalImage.getHeight() * ratio);
 
-        // Thực hiện resize
         BufferedImage resizedImage = new BufferedImage(newWidth, newHeight, originalImage.getType());
         Graphics2D g = resizedImage.createGraphics();
         g.drawImage(originalImage, 0, 0, newWidth, newHeight, null);
@@ -319,11 +255,22 @@ public class UserService {
         return resizedImage;
     }
 
-    // Admin: Lấy tất cả users
-    public List<UserResponseDTO> findAllUsers() {
-        return userRepository.findAll().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    // Admin: Lấy tất cả users với phân trang
+    public Page<UserResponseDTO> findAllUsers(Pageable pageable) {
+        return userRepository.findAll(pageable)
+                .map(this::convertToDTO);
+    }
+
+    // Admin: Tìm kiếm user với phân trang
+    public Page<UserResponseDTO> searchUsers(String keyword, Pageable pageable) {
+        return userRepository.findByUsernameContainingOrFullNameContaining(keyword, keyword, pageable)
+                .map(this::convertToDTO);
+    }
+
+    // Admin: Lấy user theo trạng thái enabled với phân trang
+    public Page<UserResponseDTO> findByEnabled(boolean enabled, Pageable pageable) {
+        return userRepository.findByEnabled(enabled, pageable)
+                .map(this::convertToDTO);
     }
 
     // Admin: Lấy user bằng ID
@@ -349,6 +296,34 @@ public class UserService {
         userRepository.save(user);
     }
 
+    // Admin: Tạo người dùng mới
+    public void createUser(CreateUserDTO createUserDTO, BindingResult bindingResult) {
+        if (!createUserDTO.getPassword().equals(createUserDTO.getConfirmPassword())) {
+            bindingResult.rejectValue("confirmPassword", "match", "Passwords do not match");
+        }
+
+        if (userRepository.existsByUsername(createUserDTO.getUsername())) {
+            bindingResult.rejectValue("username", "exists", "Username already exists");
+        }
+
+        if (userRepository.existsByEmail(createUserDTO.getEmail())) {
+            bindingResult.rejectValue("email", "exists", "Email already exists");
+        }
+
+        if (bindingResult.hasErrors()) {
+            return;
+        }
+
+        User user = new User();
+        user.setUsername(createUserDTO.getUsername());
+        user.setEmail(createUserDTO.getEmail());
+        user.setPassword(passwordEncoder.encode(createUserDTO.getPassword()));
+        user.setFullName(createUserDTO.getFullName());
+        user.setEnabled(true);
+
+        userRepository.save(user);
+    }
+
     private UserResponseDTO convertToDTO(User user) {
         return UserResponseDTO.builder()
                 .id(user.getId())
@@ -361,193 +336,26 @@ public class UserService {
                 .build();
     }
 
-    /**
-     * Đếm tổng số user trong hệ thống
-     * @return tổng số user
-     */
     public long countAllUsers() {
         return userRepository.count();
     }
 
-    /**
-     * Đếm số user đang active (enabled = true)
-     * @return số user active
-     */
     public long countActiveUsers() {
         return userRepository.countByEnabled(true);
     }
 
-    /**
-     * Đếm số user đang inactive (enabled = false)
-     * @return số user inactive
-     */
     public long countInactiveUsers() {
         return userRepository.countByEnabled(false);
     }
 
-    /**
-     * Đếm số user mới tạo trong ngày hôm nay
-     * @return số user mới tạo hôm nay
-     */
     public long countNewUsersToday() {
         LocalDateTime startOfDay = LocalDateTime.now().with(LocalTime.MIN);
         return userRepository.countByCreatedAtGreaterThanEqual(startOfDay);
     }
 
-    /**
-     * Lấy danh sách các user mới nhất (giới hạn 5 user)
-     * @return danh sách user mới nhất
-     */
     public List<UserResponseDTO> findRecentUsers() {
         return userRepository.findTop5ByOrderByCreatedAtDesc().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
-    }
-
-
-    /**
-     * Lấy danh sách tìm kiếm theo username hoặc full name
-     * @return danh sách user tìm kiếm được
-    * */
-    public List<UserResponseDTO> searchUsers(String keyword) {
-        return userRepository.findByUsernameContainingOrFullNameContaining(keyword, keyword)
-                .stream().map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Lấy danh sách theo enabled
-     * @return danh sách user theo enabled
-     * */
-    public List<UserResponseDTO> findByEnabled(boolean enabled) {
-        return userRepository.findByEnabled(enabled).stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Cập nhật thông tin người dùng bởi admin
-     * @param id ID của người dùng cần cập nhật
-     * @param updateDTO DTO chứa thông tin cập nhật
-     */
-    public void updateUserProfile(Long id, AdminUpdateUserDTO updateDTO) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // Cập nhật fullName nếu có giá trị
-        if (updateDTO.getFullName() != null && !updateDTO.getFullName().isEmpty()) {
-            user.setFullName(updateDTO.getFullName());
-        }
-
-        // Cập nhật email nếu có giá trị và không trùng
-        if (updateDTO.getEmail() != null && !updateDTO.getEmail().isEmpty()) {
-            if (!updateDTO.getEmail().equals(user.getEmail())) {
-                if (userRepository.existsByEmail(updateDTO.getEmail())) {
-                    throw new RuntimeException("Email already exists");
-                }
-                user.setEmail(updateDTO.getEmail());
-            }
-        }
-
-        // Cập nhật mật khẩu nếu có giá trị
-        if (updateDTO.getNewPassword() != null && !updateDTO.getNewPassword().isEmpty()) {
-            user.setPassword(passwordEncoder.encode(updateDTO.getNewPassword()));
-        }
-
-        // Cập nhật trạng thái
-        user.setEnabled(updateDTO.isEnabled());
-
-        userRepository.save(user);
-    }
-    /**
-     * Cập nhật avatar cho người dùng bởi admin
-     * @param id ID của người dùng
-     * @param avatarFile File avatar upload
-     * @throws IOException nếu có lỗi khi lưu file
-     */
-    public void updateUserAvatar(Long id, MultipartFile avatarFile) throws IOException {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // Validate file
-        if (avatarFile.isEmpty()) {
-            throw new RuntimeException("Please select a file to upload");
-        }
-
-        // Lấy phần mở rộng của file
-        String originalFilename = avatarFile.getOriginalFilename();
-        String fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
-
-        // Tạo filename theo username
-        String filename = user.getUsername() + fileExtension;
-
-        // Đường dẫn thư mục lưu avatar
-        Path uploadPath = Paths.get("src/main/resources/static/images/avatar");
-
-        // Tạo thư mục nếu chưa tồn tại
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
-
-        // Xóa avatar cũ nếu tồn tại
-        Files.list(uploadPath)
-                .filter(path -> path.getFileName().toString().startsWith(user.getUsername() + "."))
-                .forEach(path -> {
-                    try {
-                        Files.delete(path);
-                    } catch (IOException e) {
-                        throw new RuntimeException("Failed to delete old avatar", e);
-                    }
-                });
-
-        // Resize ảnh nếu cần (giới hạn 800x800)
-        BufferedImage resizedImage = resizeImage(avatarFile, 800, 800);
-
-        // Lưu ảnh đã resize
-        Path filePath = uploadPath.resolve(filename);
-        ImageIO.write(resizedImage, fileExtension.substring(1), filePath.toFile());
-        Files.copy(avatarFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-        // Cập nhật đường dẫn avatar vào database
-        user.setAvatarUrl("/images/avatar/" + filename);
-        userRepository.save(user);
-    }
-
-    // Trong UserService.java
-    /**
-     * Tạo người dùng mới từ CreateUserDTO (dành cho admin)
-     * @param createUserDTO DTO chứa thông tin người dùng mới
-     * @param bindingResult Đối tượng để ghi nhận lỗi validate
-     */
-    public void createUser(CreateUserDTO createUserDTO, BindingResult bindingResult) {
-        // Kiểm tra password và confirmPassword có khớp không
-        if (!createUserDTO.getPassword().equals(createUserDTO.getConfirmPassword())) {
-            bindingResult.rejectValue("confirmPassword", "match", "Passwords do not match");
-        }
-
-        // Kiểm tra trùng username
-        if (userRepository.existsByUsername(createUserDTO.getUsername())) {
-            bindingResult.rejectValue("username", "exists", "Username already exists");
-        }
-
-        // Kiểm tra trùng email
-        if (userRepository.existsByEmail(createUserDTO.getEmail())) {
-            bindingResult.rejectValue("email", "exists", "Email already exists");
-        }
-
-        // Nếu có lỗi thì dừng lại, không tạo người dùng
-        if (bindingResult.hasErrors()) {
-            return;
-        }
-
-        // Tạo người dùng mới
-        User user = new User();
-        user.setUsername(createUserDTO.getUsername());
-        user.setEmail(createUserDTO.getEmail());
-        user.setPassword(passwordEncoder.encode(createUserDTO.getPassword()));
-        user.setFullName(createUserDTO.getFullName());
-        user.setEnabled(true); // Mặc định kích hoạt người dùng mới
-
-        userRepository.save(user);
     }
 }

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        .pagination-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .page-input-group {
+            display: flex;
+            align-items: center;
+            margin: 0 15px;
+        }
+        .page-input-group input {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            border-right: none;
+        }
+        .page-input-group button {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+    </style>
+</head>
+<body>
+<!-- Pagination Fragment -->
+<nav th:fragment="pagination(totalPages, currentPage, pageSize, search, currentFilter, baseUrl)"
+     aria-label="Page navigation" th:if="${totalPages > 1}" class="d-flex justify-content-center">
+    <div class="pagination-container">
+        <!-- First page button -->
+        <div class="btn-group">
+            <a class="btn btn-outline-primary"
+               th:classappend="${currentPage == 0} ? 'disabled'"
+               th:href="@{${baseUrl}(page=0, size=${pageSize}, search=${search}, filter=${currentFilter})}">
+                <i class="fas fa-angle-double-left"></i>
+            </a>
+
+            <!-- Previous page button -->
+            <a class="btn btn-outline-primary"
+               th:classappend="${currentPage == 0} ? 'disabled'"
+               th:href="@{${baseUrl}(page=${currentPage - 1}, size=${pageSize}, search=${search}, filter=${currentFilter})}">
+                <i class="fas fa-angle-left"></i>
+            </a>
+        </div>
+
+        <!-- Page input with Go button -->
+        <div class="page-input-group">
+            <input type="number" class="form-control" style="width: 70px; text-align: center;"
+                   th:value="${currentPage + 1}"
+                   min="1" th:max="${totalPages}"
+                   th:attr="data-total-pages=${totalPages}, data-base-url=${baseUrl}, data-page-size=${pageSize}, data-search=${search}, data-filter=${currentFilter}"
+                   onkeydown="if(event.key === 'Enter') window.navigateToPage(this);"
+                   name="pageInput" id="pageInput">
+            <button type="button" class="btn btn-primary" onclick="window.navigateToPage(this.closest('.page-input-group').querySelector('#pageInput'))">
+                Go
+            </button>
+        </div>
+
+        <!-- Next and Last page buttons -->
+        <div class="btn-group">
+            <!-- Next page button -->
+            <a class="btn btn-outline-primary"
+               th:classappend="${currentPage == totalPages - 1} ? 'disabled'"
+               th:href="@{${baseUrl}(page=${currentPage + 1}, size=${pageSize}, search=${search}, filter=${currentFilter})}">
+                <i class="fas fa-angle-right"></i>
+            </a>
+
+            <!-- Last page button -->
+            <a class="btn btn-outline-primary"
+               th:classappend="${currentPage == totalPages - 1} ? 'disabled'"
+               th:href="@{${baseUrl}(page=${totalPages - 1}, size=${pageSize}, search=${search}, filter=${currentFilter})}">
+                <i class="fas fa-angle-double-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        window.navigateToPage = function(input) {
+            const totalPages = parseInt(input.getAttribute('data-total-pages')) || 1;
+            let page = parseInt(input.value) - 1; // Convert to 0-based index
+            if (isNaN(page) || page < 0) {
+                page = 0; // Go to first page if input is invalid or less than 1
+            } else if (page >= totalPages) {
+                page = totalPages - 1; // Go to last page if input exceeds total pages
+            }
+            const baseUrl = input.getAttribute('data-base-url') || '';
+            const pageSize = input.getAttribute('data-page-size') || '10';
+            const search = input.getAttribute('data-search') || '';
+            const filter = input.getAttribute('data-filter') || '';
+            const url = new URL(baseUrl, window.location.origin);
+            url.searchParams.set('page', page);
+            url.searchParams.set('size', pageSize);
+            url.searchParams.set('search', search);
+            url.searchParams.set('filter', filter);
+            window.location.href = url.toString();
+        };
+    </script>
+</nav>
+</body>
+</html>

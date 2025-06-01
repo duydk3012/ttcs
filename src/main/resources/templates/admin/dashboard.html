@@ -95,56 +95,12 @@
 </head>
 <body>
 <!-- Header -->
-<header class="navbar navbar-dark sticky-top bg-dark p-3 shadow">
-    <div class="container-fluid d-flex align-items-center justify-content-between">
-        <!-- Logo -->
-        <a class="navbar-brand logo" th:href="@{/}">
-            <img th:src="@{/images/logo_text.png}" alt="Logo" class="img-fluid" style="width: 200px;">
-        </a>
-
-        <!-- Toggle button -->
-        <button class="navbar-toggler d-md-none collapsed toggle-btn" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <!-- User dropdown menu -->
-        <div class="dropdown user-dropdown">
-            <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown">
-                <img th:src="@{${currentUser.avatarUrl}}" width="32" height="32" class="rounded-circle me-2" alt="Avatar">
-                <strong th:text="${currentUser.fullName} ?: ${currentUser.username}"></strong>
-            </a>
-            <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
-                <li><a class="dropdown-item" href="/user/profile">Profile</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li>
-                    <form action="#" th:action="@{/logout}" method="POST">
-                        <input type="submit" value="Sign out" class="dropdown-item" />
-                    </form>
-                </li>
-            </ul>
-        </div>
-    </div>
-</header>
+<div th:replace="~{admin/fragments/header :: header}"></div>
 
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar -->
-        <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
-            <div class="position-sticky pt-3">
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/admin/dashboard">
-                            Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/admin/users">
-                            User Management
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </nav>
+        <div th:replace="~{admin/fragments/sidebar :: sidebar}"></div>
 
         <!-- Main content -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
@@ -164,6 +120,8 @@
 
             <!-- Thống kê nhanh -->
             <div class="row">
+
+                <!-- Số lượng user -->
                 <div class="col-md-3">
                     <div class="card-counter primary">
                         <i class="fas fa-users"></i>
@@ -172,6 +130,7 @@
                     </div>
                 </div>
 
+                <!-- Số lượng active user -->
                 <div class="col-md-3">
                     <div class="card-counter success">
                         <i class="fas fa-user-check"></i>
@@ -180,6 +139,7 @@
                     </div>
                 </div>
 
+                <!-- Số lượng inactive user -->
                 <div class="col-md-3">
                     <div class="card-counter warning">
                         <i class="fas fa-user-clock"></i>
@@ -188,6 +148,7 @@
                     </div>
                 </div>
 
+                <!-- Số lượng user mới trong ngày -->
                 <div class="col-md-3">
                     <div class="card-counter danger">
                         <i class="fas fa-user-plus"></i>
@@ -200,6 +161,8 @@
             <!-- Recent Activity -->
             <div class="row mt-4">
                 <div class="col-md-6">
+
+                    <!-- Recent Users Table -->
                     <div class="card">
                         <div class="card-header">
                             <h5>Recent Users</h5>

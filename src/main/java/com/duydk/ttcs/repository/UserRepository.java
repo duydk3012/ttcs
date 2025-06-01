@@ -1,6 +1,8 @@
 package com.duydk.ttcs.repository;
 
-import com.duydk.ttcs.model.User;
+import com.duydk.ttcs.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -35,9 +37,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // Lấy top 5 user mới nhất
     List<User> findTop5ByOrderByCreatedAtDesc();
 
-    // Tìm kiếm bằng từ khóa chứa trong username hoặc fullName
-    List<User> findByUsernameContainingOrFullNameContaining(String username, String fullName);
+    // Tìm kiếm bằng từ khóa chứa trong username hoặc fullName với phân trang
+    Page<User> findByUsernameContainingOrFullNameContaining(String username, String fullName, Pageable pageable);
 
-    // Tìm kiếm active user
-    List<User> findByEnabled(boolean enabled);
+    // Tìm kiếm active user với phân trang
+    Page<User> findByEnabled(boolean enabled, Pageable pageable);
+
+    // Lấy tất cả user với phân trang
+    Page<User> findAll(Pageable pageable);
 }
