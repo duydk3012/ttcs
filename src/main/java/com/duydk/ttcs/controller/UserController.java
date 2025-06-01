@@ -39,6 +39,7 @@ public class UserController {
         UserResponseDTO user = userService.getCurrentUserProfile();
         model.addAttribute("user", user);
         model.addAttribute("currentUser", user);
+        model.addAttribute("isAuthenticated", true);
         model.addAttribute("updateProfileDTO", new UpdateProfileDTO());
         return "user/profile";
     }

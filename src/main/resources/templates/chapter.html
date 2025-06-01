@@ -104,6 +104,10 @@
       background: linear-gradient(90deg, transparent, #007bff, transparent);
       border-radius: 3px;
     }
+
+    .white-space-pre {
+      white-space: pre-wrap;
+    }
   </style>
 </head>
 
@@ -156,7 +160,7 @@
 
   <!-- Nội dung chương -->
   <section class="chapter-content">
-    <p th:text="${chapter.content}"></p>
+    <p class="white-space-pre" th:text="${chapter.content}"></p>
   </section>
 
   <!-- Bình luận -->

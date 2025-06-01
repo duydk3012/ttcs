@@ -47,9 +47,24 @@
     }
 
     /* Style cho phân trang */
-    .pagination {
-      justify-content: center;
-      margin-top: 20px;
+    .pagination-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .page-input-group {
+      display: flex;
+      align-items: center;
+      margin: 0 15px;
+    }
+    .page-input-group input {
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+      border-right: none;
+    }
+    .page-input-group button {
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
     }
 
     /* Style cho bình luận */
@@ -95,6 +110,36 @@
       margin-top: auto;
       padding-top: 20px;
     }
+
+    .white-space-pre {
+      white-space: pre-wrap;
+    }
+
+    /*description style*/
+    .story-description {
+      max-height: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 5;
+      -webkit-box-orient: vertical;
+      transition: max-height 0.3s ease;
+    }
+
+    .story-description.expanded {
+      max-height: none;
+      -webkit-line-clamp: unset;
+      display: block;
+    }
+
+    .btn-link {
+      text-decoration: none;
+      color: #0d6efd;
+    }
+
+    .btn-link:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 
@@ -116,7 +161,7 @@
         <!-- Thông tin chi tiết -->
         <div>
           <p><strong>Tác giả:</strong> <span th:text="${story.author}"></span></p>
-          <p><strong>Tổng số chương:</strong> <span th:text="${#lists.size(story.chapters)}"></span></p>
+          <p><strong>Tổng số chương:</strong> <span th:text="${chaptersCount}"></span></p>
           <p><strong>Lượt xem:</strong> <span th:text="${story.views}"></span></p>
           <p><strong>Trạng thái:</strong>
             <span th:if="${story.status.name() == 'completed'}" class="badge bg-success">Completed</span>
@@ -125,7 +170,10 @@
           </p>
           <div th:unless="${story.description == null}">
             <p><strong>Mô tả:</strong></p>
-            <p class="story-description" th:text="${story.description}"></p>
+            <div class="description-container">
+              <p class="story-description white-space-pre" th:text="${story.description}" id="storyDescription"></p>
+            </div>
+            <button id="toggleDescription" class="btn btn-link p-0">Xem thêm</button>
           </div>
         </div>
 
@@ -160,23 +208,15 @@
     </table>
 
     <!-- Phân trang -->
-    <nav aria-label="Chapter pagination" th:if="${not chapters.empty}">
-      <ul class="pagination">
-        <!-- Nút Previous -->
-        <li class="page-item" th:classappend="${chapters.first} ? 'disabled'">
-          <a class="page-link" th:href="@{/story/__${story.id}__(page=${chapters.number - 1})}">Previous</a>
-        </li>
-        <!-- Các trang -->
-        <li class="page-item" th:each="i : ${#numbers.sequence(0, chapters.totalPages - 1)}"
-            th:classappend="${i == chapters.number} ? 'active'">
-          <a class="page-link" th:href="@{/story/__${story.id}__(page=${i})}" th:text="${i + 1}"></a>
-        </li>
-        <!-- Nút Next -->
-        <li class="page-item" th:classappend="${chapters.last} ? 'disabled'">
-          <a class="page-link" th:href="@{/story/__${story.id}__(page=${chapters.number + 1})}">Next</a>
-        </li>
-      </ul>
-    </nav>
+    <div th:replace="~{admin/fragments/pagination :: pagination(
+                totalPages=${chapters.totalPages},
+                currentPage=${chapters.number},
+                pageSize=${pageSize},
+                search='',
+                currentFilter='',
+                baseUrl='/story/'+${story.id}
+            )}"></div>
+
   </section>
 
   <!-- Bình luận -->
@@ -211,5 +251,30 @@
 
 <!-- Bootstrap JS Bundle with Popper -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtn = document.getElementById('toggleDescription');
+    const description = document.getElementById('storyDescription');
+
+    if (toggleBtn && description) {
+      toggleBtn.addEventListener('click', function() {
+        description.classList.toggle('expanded');
+
+        if (description.classList.contains('expanded')) {
+          toggleBtn.textContent = 'Rút gọn';
+        } else {
+          toggleBtn.textContent = 'Xem thêm';
+        }
+      });
+
+      // Ẩn nút nếu nội dung không đủ dài
+      const lineHeight = parseInt(window.getComputedStyle(description).lineHeight);
+      const maxHeight = 5 * lineHeight; // 5 dòng
+      if (description.scrollHeight <= maxHeight) {
+        toggleBtn.style.display = 'none';
+      }
+    }
+  });
+</script>
 </body>
 </html>

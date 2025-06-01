@@ -1,7 +1,9 @@
 package com.duydk.ttcs.entity;
 
+import com.duydk.ttcs.service.ChapterService;
 import jakarta.persistence.*;
 import lombok.Data;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;

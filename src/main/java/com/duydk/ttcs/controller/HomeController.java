@@ -41,7 +41,7 @@ public class HomeController {
         // Thêm danh sách truyện hot
         model.addAttribute("hotStories", storyService.getHotStories());
         // Thêm danh sách chapter mới cập nhật
-        model.addAttribute("recentChapters", chapterService.getRecentChapters());
+        model.addAttribute("recentUpdatedStories", storyService.getRecentUpdatedStories());
         // Thêm danh sách truyện mới
         model.addAttribute("newStories", storyService.getNewStories());
         // Thêm danh sách truyện đã hoàn thành
@@ -65,6 +65,8 @@ public class HomeController {
         // Lấy danh sách chương với phân trang
         PageRequest pageable = PageRequest.of(page, size, Sort.by("chapterNumber").ascending());
         model.addAttribute("chapters", chapterService.findAllChaptersByStoryId(storyId, pageable));
+        model.addAttribute("chaptersCount", chapterService.findAllChaptersByStoryId(storyId, Pageable.unpaged()).getContent().size());
+
 
         // Lấy danh sách bình luận
         model.addAttribute("comments", commentService.getCommentsByStoryId(storyId));
@@ -73,6 +75,8 @@ public class HomeController {
         UserResponseDTO currentUser = userService.getCurrentUserProfile();
         model.addAttribute("currentUser", currentUser);
         model.addAttribute("isAuthenticated", currentUser != null);
+
+        model.addAttribute("pageSize", size);
 
         return "story";
     }

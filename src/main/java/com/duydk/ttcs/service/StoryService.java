@@ -1,5 +1,7 @@
 package com.duydk.ttcs.service;
 
+import com.duydk.ttcs.dto.StoryWithLatestChapterDTO;
+import com.duydk.ttcs.entity.Chapter;
 import com.duydk.ttcs.entity.Story;
 import com.duydk.ttcs.entity.StoryStatus;
 import com.duydk.ttcs.repository.StoryRepository;
@@ -11,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Data
 @Service
@@ -60,6 +63,18 @@ public class StoryService {
     // Lấy top 10 truyện mới
     public List<Story> getNewStories() {
         return storyRepository.findTop10ByOrderByCreatedAtDesc();
+    }
+
+    // Lấy top 10 truyện mới cập nhật
+    public List<StoryWithLatestChapterDTO> getRecentUpdatedStories() {
+        List<Story> stories = storyRepository.findTop10ByOrderByUpdatedAtDesc();
+
+        return stories.stream()
+                .map(story -> {
+                    Chapter latestChapter = storyRepository.findLatestChapterByStory(story);
+                    return new StoryWithLatestChapterDTO(story, latestChapter);
+                })
+                .collect(Collectors.toList());
     }
 
     // Lấy top 10 truyện đã hoàn thành

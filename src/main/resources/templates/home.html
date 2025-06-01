@@ -154,6 +154,43 @@
             border-bottom: 2px solid #007bff;
             padding-bottom: 5px;
         }
+        /* Common styles for story images */
+        .story-cover {
+            width: 80px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-right: 15px;
+        }
+
+        /* Common styles for story items */
+        .story-info-container {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .story-item {
+            position: relative;
+            height: 250px;
+            background-size: cover;
+            background-position: center;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s;
+            margin-bottom: 15px;
+        }
+
+
+        .chapter-item, .new-story-item {
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+            transition: background-color 0.2s;
+        }
+
+        .chapter-item:hover, .new-story-item:hover {
+            background-color: #f8f9fa;
+        }
     </style>
 </head>
 
@@ -164,14 +201,13 @@
 <!-- Phần nội dung chính -->
 <main class="container my-4">
     <!-- Truyện Hot -->
-    <!-- Hiển thị top 10 truyện theo views, 2 dòng, mỗi dòng 5 item -->
     <section>
         <h2 class="section-title">Truyện Hot</h2>
         <div class="row row-cols-1 row-cols-md-2 row-cols-lg-5 g-4">
             <!-- Lặp qua danh sách top 10 truyện hot -->
             <div class="col" th:each="story : ${hotStories}">
                 <a th:href="@{/story/__${story.id}__}" class="text-decoration-none">
-                    <div class="story-item" th:style="'background-image: url(' + ${story.coverImage} + ')'">
+                    <div class="story-item" th:style="'background-image: url(' + ${story.coverImage} + '); background-size: cover; background-position: center;'">
                         <!-- Hiển thị trạng thái truyện -->
                         <span th:if="${story.status.name() == 'completed'}" class="badge bg-success status-badge">Completed</span>
                         <span th:if="${story.status.name() == 'ongoing'}" class="badge bg-warning status-badge">Ongoing</span>
@@ -187,23 +223,38 @@
         </div>
     </section>
 
-    <!-- Phần Truyện Mới Cập Nhật và Truyện Mới đặt cạnh nhau -->
+    <!-- Phần Truyện Mới Cập Nhật và Truyện Mới -->
     <div class="row mt-5">
         <!-- Truyện Mới Cập Nhật -->
-        <!-- Hiển thị top 10 chapter theo updatedAt, chiếm 1/2 màn hình -->
         <section class="col-md-6">
             <h2 class="section-title">Truyện Mới Cập Nhật</h2>
             <div class="list-group">
-                <!-- Lặp qua danh sách top 10 chapter -->
-                <div class="chapter-item list-group-item" th:each="chapter : ${recentChapters}">
-                    <a th:href="@{/story/__${chapter.story.id}__/chapter/__${chapter.id}__}" class="text-decoration-none">
-                        <div class="d-flex">
-                            <img th:src="${chapter.story.coverImage}" alt="Cover" class="img-fluid">
-                            <div class="chapter-info">
-                                <h5 th:text="${chapter.story.title}"></h5>
-                                <p class="mb-1" th:text="'Chương ' + ${chapter.chapterNumber} + ': ' + ${chapter.title}"></p>
-                                <small th:text="'Thời gian cập nhật: ' + ${#temporals.format(chapter.updatedAt, 'dd/MM/yyyy HH:mm')}"></small>
-                            </div>
+                <div class="chapter-item list-group-item" th:each="storyDTO : ${recentUpdatedStories}">
+                    <a th:href="@{/story/__${storyDTO.storyId}__/chapter/__${storyDTO.chapterId}__}"
+                       class="text-decoration-none story-info-container" th:if="${storyDTO.chapterId != null}">
+                        <img th:src="${storyDTO.coverImage}" alt="Cover" class="story-cover">
+                        <div class="chapter-info">
+                            <h5 class="mb-1" th:text="${storyDTO.title}"></h5>
+                            <p class="mb-1 text-muted"
+                               th:text="'Chương ' + ${storyDTO.chapterNumber} + ': ' + ${storyDTO.chapterTitle}">
+                            </p>
+                            <small class="text-muted"
+                                   th:text="'Cập nhật: ' + ${#temporals.format(storyDTO.chapterUpdatedAt, 'dd/MM/yyyy HH:mm')}">
+                            </small>
+                        </div>
+                    </a>
+
+                    <!-- Trường hợp truyện chưa có chương -->
+                    <a th:href="@{/story/__${storyDTO.storyId}__}"
+                       th:unless="${storyDTO.chapterId != null}"
+                       class="text-decoration-none story-info-container">
+                        <img th:src="${storyDTO.coverImage}" alt="Cover" class="story-cover">
+                        <div class="chapter-info">
+                            <h5 class="mb-1" th:text="${storyDTO.title}"></h5>
+                            <p class="mb-1 text-muted">Chưa có chương nào</p>
+                            <small class="text-muted"
+                                   th:text="'Tạo lúc: ' + ${#temporals.format(storyDTO.storyUpdatedAt, 'dd/MM/yyyy HH:mm')}">
+                            </small>
                         </div>
                     </a>
                 </div>
@@ -211,20 +262,16 @@
         </section>
 
         <!-- Truyện Mới -->
-        <!-- Hiển thị top 10 truyện theo createdAt, chiếm 1/2 màn hình -->
         <section class="col-md-6">
             <h2 class="section-title">Truyện Mới</h2>
             <div class="list-group">
-                <!-- Lặp qua danh sách top 10 truyện mới -->
                 <div class="new-story-item list-group-item" th:each="story : ${newStories}">
-                    <a th:href="@{/story/__${story.id}__}" class="text-decoration-none">
-                        <div class="d-flex">
-                            <img th:src="${story.coverImage}" alt="Cover" class="img-fluid">
-                            <div class="story-info">
-                                <h5 th:text="${story.title}"></h5>
-                                <p class="mb-1" th:text="'Tác giả: ' + ${story.author}"></p>
-                                <small th:text="'Thời gian tạo: ' + ${#temporals.format(story.createdAt, 'dd/MM/yyyy HH:mm')}"></small>
-                            </div>
+                    <a th:href="@{/story/__${story.id}__}" class="text-decoration-none story-info-container">
+                        <img th:src="${story.coverImage}" alt="Cover" class="story-cover">
+                        <div class="story-info">
+                            <h5 th:text="${story.title}"></h5>
+                            <p class="mb-1" th:text="'Tác giả: ' + ${story.author}"></p>
+                            <small th:text="'Thời gian tạo: ' + ${#temporals.format(story.createdAt, 'dd/MM/yyyy HH:mm')}"></small>
                         </div>
                     </a>
                 </div>
@@ -233,20 +280,15 @@
     </div>
 
     <!-- Truyện Đã Hoàn Thành -->
-    <!-- Hiển thị top 10 truyện có status completed -->
     <section class="mt-5">
         <h2 class="section-title">Truyện Đã Hoàn Thành</h2>
         <div class="row row-cols-1 row-cols-md-2 row-cols-lg-5 g-4">
-            <!-- Lặp qua danh sách top 10 truyện hoàn thành -->
             <div class="col" th:each="story : ${completedStories}">
                 <a th:href="@{/story/__${story.id}__}" class="text-decoration-none">
-                    <div class="story-item" th:style="'background-image: url(' + ${story.coverImage} + ')'">
-                        <!-- Hiển thị trạng thái truyện -->
+                    <div class="story-item" th:style="'background-image: url(' + ${story.coverImage} + '); background-size: cover; background-position: center;'">
                         <span class="badge bg-success status-badge">Completed</span>
-                        <!-- Hiển thị chương mới nhất -->
                         <span class="latest-chapter" th:if="${#lists.size(story.chapters) > 0}"
                               th:text="'Ch. ' + ${#lists.sort(story.chapters, 'chapterNumber', 'DESC')[0].chapterNumber}"></span>
-                        <!-- Tiêu đề truyện -->
                         <div class="title-overlay" th:text="${story.title}"></div>
                     </div>
                 </a>
