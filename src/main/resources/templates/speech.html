@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chuyển văn bản thành tiếng nói</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Header CSS -->
+    <link rel="stylesheet" th:href="@{~/css/header.css}">
+    <style>
+        .speech-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .input-section {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .audio-player {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .error-message {
+            color: red;
+            display: none;
+            margin-top: 10px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+<!-- Include header fragment -->
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main class="container my-5">
+    <div class="speech-container">
+        <div class="input-section">
+            <h2>Chuyển văn bản thành tiếng nói</h2>
+            <form id="speechForm" th:action="@{/speech/convert}" method="post">
+                <div class="mb-3">
+                    <label for="textInput" class="form-label">Nhập văn bản</label>
+                    <textarea class="form-control" id="textInput" name="text" rows="5"
+                              placeholder="Nhập văn bản cần chuyển thành tiếng nói..."
+                              th:text="${text}">Hắn đã từng là một cái binh lính, được qua hài lòng huấn luyện, cũng là Cứu thục chi quang người bình thường bên trong số một số hai tồn tại.</textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="voiceSelect" class="form-label">Chọn giọng nói</label>
+                    <select class="form-select" id="voiceSelect" name="voiceName">
+                        <option value="">-- Chọn giọng nói --</option>
+                        <option th:each="voice : ${voices}"
+                                th:value="${voice.name}"
+                                th:text="${voice.name + ' (' + voice.gender + ')'}"
+                                th:selected="${selectedVoice == voice.name}"></option>
+                    </select>
+                </div>
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-play me-2"></i>Chuyển và phát
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="downloadAudio()">
+                        <i class="fas fa-download me-2"></i>Tải file MP3
+                    </button>
+                </div>
+            </form>
+            <div id="errorMessage" class="error-message"></div>
+        </div>
+
+        <div class="audio-player" id="audioPlayer" style="display: none;">
+            <h4>Phát âm thanh</h4>
+            <audio id="audioElement" controls></audio>
+        </div>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Xử lý phát trực tiếp
+    document.getElementById('speechForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const text = document.getElementById('textInput').value.trim();
+        const voiceName = document.getElementById('voiceSelect').value;
+        const errorMessage = document.getElementById('errorMessage');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const audioElement = document.getElementById('audioElement');
+
+        // Kiểm tra đầu vào
+        if (!text) {
+            errorMessage.textContent = 'Vui lòng nhập văn bản!';
+            errorMessage.style.display = 'block';
+            audioPlayer.style.display = 'none';
+            return;
+        }
+        if (!voiceName) {
+            errorMessage.textContent = 'Vui lòng chọn giọng nói!';
+            errorMessage.style.display = 'block';
+            audioPlayer.style.display = 'none';
+            return;
+        }
+
+        errorMessage.style.display = 'none';
+
+        try {
+            const response = await fetch('/speech/convert', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `text=${encodeURIComponent(text)}&voiceName=${encodeURIComponent(voiceName)}`
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || `Lỗi ${response.status}: ${response.statusText}`);
+            }
+
+            const base64Audio = await response.text();
+            audioElement.src = `data:audio/mp3;base64,${base64Audio}`;
+            audioPlayer.style.display = 'block';
+            audioElement.play();
+        } catch (error) {
+            errorMessage.textContent = error.message || 'Đã xảy ra lỗi, vui lòng thử lại!';
+            errorMessage.style.display = 'block';
+            audioPlayer.style.display = 'none';
+            console.error('Lỗi:', error);
+        }
+    });
+
+    // Xử lý tải file MP3
+    function downloadAudio() {
+        const text = document.getElementById('textInput').value.trim();
+        const voiceName = document.getElementById('voiceSelect').value;
+        const errorMessage = document.getElementById('errorMessage');
+
+        if (!text) {
+            errorMessage.textContent = 'Vui lòng nhập văn bản!';
+            errorMessage.style.display = 'block';
+            return;
+        }
+        if (!voiceName) {
+            errorMessage.textContent = 'Vui lòng chọn giọng nói!';
+            errorMessage.style.display = 'block';
+            return;
+        }
+
+        errorMessage.style.display = 'none';
+
+        // Tạo form ẩn để gửi yêu cầu tải
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/speech/download';
+        form.style.display = 'none';
+
+        const textInput = document.createElement('input');
+        textInput.type = 'hidden';
+        textInput.name = 'text';
+        textInput.value = text;
+        form.appendChild(textInput);
+
+        const voiceInput = document.createElement('input');
+        voiceInput.type = 'hidden';
+        voiceInput.name = 'voiceName';
+        voiceInput.value = voiceName;
+        form.appendChild(voiceInput);
+
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+    }
+</script>
+</body>
+</html>

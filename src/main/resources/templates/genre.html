@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${genreName} + ' - Danh sách truyện'">Danh sách truyện</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <!-- Header CSS -->
+  <link rel="stylesheet" th:href="@{~/css/header.css}">
+  <style>
+    .story-card {
+      transition: transform 0.2s;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .story-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .cover-img {
+      height: 200px;
+      object-fit: cover;
+      border-radius: 5px 5px 0 0;
+    }
+    .pagination .page-item.active .page-link {
+      background-color: #6c757d;
+      border-color: #6c757d;
+    }
+    .search-info {
+      background-color: #f8f9fa;
+      border-radius: 5px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    .status-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .card-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .card-text {
+      flex: 1;
+      color: #6c757d;
+    }
+    .card-footer {
+      margin-top: auto;
+    }
+    .filter-section {
+      background-color: #f8f9fa;
+      border-radius: 5px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    .sort-btn-group {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+    .sort-btn {
+      position: relative;
+      padding-right: 30px;
+    }
+    .sort-icon {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .active-sort {
+      background-color: #6c757d;
+      color: white;
+    }
+    .sort-btn .sort-icon {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.7;
+    }
+    .sort-btn.active-sort .sort-icon {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+<!-- Include header fragment -->
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main class="container my-5">
+  <div class="search-info">
+    <h2 th:text="${genreName}">Thể loại</h2>
+    <p class="text-muted" th:text="${'Tìm thấy ' + stories.totalElements + ' kết quả'}"></p>
+  </div>
+
+  <!-- Filter and Sort Section -->
+  <div class="filter-section">
+    <form id="filterForm" th:action="@{/genre}" method="get">
+      <input type="hidden" name="genre" th:value="${selectedGenre}">
+      <input type="hidden" name="search" th:value="${search}">
+      <input type="hidden" name="page" value="0">
+      <input type="hidden" name="size" th:value="${pageSize}">
+      <input type="hidden" name="sortBy" id="sortByInput" th:value="${param.sortBy ?: 'title'}">
+      <input type="hidden" name="sortOrder" id="sortOrderInput" th:value="${param.sortOrder ?: 'asc'}">
+
+      <div class="row g-3">
+        <!-- Status Filter -->
+        <div class="col-md-3">
+          <label for="status" class="form-label">Trạng thái</label>
+          <select class="form-select" id="status" name="status" onchange="this.form.submit()">
+            <option value="" th:selected="${status == null or status == ''}">Tất cả</option>
+            <option value="ongoing" th:selected="${status == 'ongoing'}">Đang tiến hành</option>
+            <option value="completed" th:selected="${status == 'completed'}">Đã hoàn thành</option>
+            <option value="dropped" th:selected="${status == 'dropped'}">Đã bỏ</option>
+          </select>
+        </div>
+
+        <!-- Chapter Count Filter -->
+        <div class="col-md-3">
+          <label for="chapters" class="form-label">Số chương</label>
+          <select class="form-select" id="chapters" name="chapters" onchange="this.form.submit()">
+            <option value="" th:selected="${chapters == null or chapters == ''}">Tất cả</option>
+            <option value="0-100" th:selected="${chapters == '0-100'}">Ít hơn 100 chương</option>
+            <option value="100-500" th:selected="${chapters == '100-500'}">100-500 chương</option>
+            <option value="500-1000" th:selected="${chapters == '500-1000'}">500-1000 chương</option>
+            <option value="1000+" th:selected="${chapters == '1000+'}">Trên 1000 chương</option>
+          </select>
+        </div>
+
+        <!-- Sort Options -->
+        <div class="col-md-6">
+          <label class="form-label">Sắp xếp</label>
+          <div class="sort-btn-group">
+            <!-- Sort by title -->
+            <button type="button" class="btn btn-outline-secondary sort-btn"
+                    th:classappend="${(param.sortBy ?: 'title') == 'title'} ? 'active-sort'"
+                    onclick="setSort('title')">
+              Tên truyện
+              <i class="fas sort-icon"
+                 th:classappend="(${param.sortBy ?: 'title'} == 'title') ?
+                 ((${param.sortOrder} ?: 'asc') == 'asc' ? 'fa-arrow-up' : 'fa-arrow-down') : 'fa-arrow-up'"></i>
+            </button>
+
+            <!-- Sort by created date -->
+            <button type="button" class="btn btn-outline-secondary sort-btn"
+                    th:classappend="${(param.sortBy ?: 'title') == 'createdAt'} ? 'active-sort'"
+                    onclick="setSort('createdAt')">
+              Ngày đăng
+              <i class="fas sort-icon"
+                 th:classappend="(${param.sortBy ?: 'title'} == 'createdAt') ?
+                 ((${param.sortOrder} ?: 'asc') == 'asc' ? 'fa-arrow-up' : 'fa-arrow-down') : 'fa-arrow-up'"></i>
+            </button>
+
+            <!-- Sort by updated date -->
+            <button type="button" class="btn btn-outline-secondary sort-btn"
+                    th:classappend="${(param.sortBy ?: 'title') == 'updatedAt'} ? 'active-sort'"
+                    onclick="setSort('updatedAt')">
+              Ngày cập nhật
+              <i class="fas sort-icon"
+                 th:classappend="(${param.sortBy ?: 'title'} == 'updatedAt') ?
+                 ((${param.sortOrder} ?: 'asc') == 'asc' ? 'fa-arrow-up' : 'fa-arrow-down') : 'fa-arrow-up'"></i>
+            </button>
+
+            <!-- Sort by views -->
+            <button type="button" class="btn btn-outline-secondary sort-btn"
+                    th:classappend="${(param.sortBy ?: 'title') == 'views'} ? 'active-sort'"
+                    onclick="setSort('views')">
+              Lượt xem
+              <i class="fas sort-icon"
+                 th:classappend="(${param.sortBy ?: 'title'} == 'views') ?
+                 ((${param.sortOrder} ?: 'asc') == 'asc' ? 'fa-arrow-up' : 'fa-arrow-down') : 'fa-arrow-up'"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Story results grid -->
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+    <div class="col" th:each="story : ${stories.content}">
+      <a th:href="@{/story/} + ${story.id}" class="text-decoration-none">
+        <div class="card story-card h-100">
+          <div class="position-relative">
+            <img th:src="${story.coverImage}" class="card-img-top cover-img" alt="Story cover">
+            <span th:if="${story.status.name() == 'completed'}" class="badge bg-success status-badge">Đã hoàn thành</span>
+            <span th:if="${story.status.name() == 'ongoing'}" class="badge bg-warning status-badge">Đang tiến hành</span>
+            <span th:if="${story.status.name() == 'dropped'}" class="badge bg-danger status-badge">Đã bỏ</span>
+          </div>
+          <div class="card-body">
+            <h5 class="card-title" th:text="${story.title}"></h5>
+            <p class="card-text text-muted" th:text="${story.author}"></p>
+            <p class="card-text" th:text="${#strings.abbreviate(story.description, 100)}"></p>
+          </div>
+          <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+            <small class="text-muted" th:text="${story.views + ' lượt xem'}"></small>
+            <a th:href="@{/story/} + ${story.id}" class="btn btn-outline-dark btn-sm">
+              Đọc ngay
+            </a>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <nav th:if="${stories.totalPages > 1}" class="mt-5">
+    <ul class="pagination justify-content-center">
+      <li class="page-item" th:classappend="${stories.first} ? 'disabled'">
+        <a class="page-link"
+           th:href="@{/genre(genre=${selectedGenre}, search=${search}, page=${currentPage - 1}, size=${pageSize},
+           status=${status}, chapters=${chapters}, sortBy=${sortBy}, sortOrder=${sortOrder})}">
+          Trước
+        </a>
+      </li>
+
+      <li th:each="i : ${#numbers.sequence(0, stories.totalPages - 1)}"
+          class="page-item" th:classappend="${i == currentPage} ? 'active'">
+        <a class="page-link"
+           th:href="@{/genre(genre=${selectedGenre}, search=${search}, page=${i}, size=${pageSize},
+           status=${status}, chapters=${chapters}, sortBy=${sortBy}, sortOrder=${sortOrder})}"
+           th:text="${i + 1}"></a>
+      </li>
+
+      <li class="page-item" th:classappend="${stories.last} ? 'disabled'">
+        <a class="page-link"
+           th:href="@{/genre(genre=${selectedGenre}, search=${search}, page=${currentPage + 1}, size=${pageSize},
+           status=${status}, chapters=${chapters}, sortBy=${sortBy}, sortOrder=${sortOrder})}">
+          Sau
+        </a>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- No results message -->
+  <div th:if="${stories.empty}" class="text-center py-5">
+    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+    <h3>Không tìm thấy truyện</h3>
+    <p class="text-muted">Hãy thử thay đổi thể loại hoặc bộ lọc</p>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  function setSort(sortBy) {
+    const sortByInput = document.getElementById('sortByInput');
+    const sortOrderInput = document.getElementById('sortOrderInput');
+
+    if (sortByInput.value === sortBy) {
+      sortOrderInput.value = (sortOrderInput.value === 'asc' || sortOrderInput.value === '') ? 'desc' : 'asc';
+    } else {
+      sortByInput.value = sortBy;
+      sortOrderInput.value = 'asc';
+    }
+
+    document.getElementById('filterForm').submit();
+  }
+</script>
+</body>
+</html>

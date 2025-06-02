@@ -124,3 +124,10 @@ CREATE TABLE ratings (
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
             FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE
 );
+
+-- Tạo bảng voices
+CREATE TABLE voices (
+                        id INT PRIMARY KEY AUTO_INCREMENT,
+                        name VARCHAR(100) NOT NULL UNIQUE,
+                        gender VARCHAR(10)
+);
