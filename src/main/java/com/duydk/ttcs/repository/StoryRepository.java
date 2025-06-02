@@ -1,6 +1,7 @@
 package com.duydk.ttcs.repository;
 
 import com.duydk.ttcs.entity.Chapter;
+import com.duydk.ttcs.entity.Genre;
 import com.duydk.ttcs.entity.Story;
 import com.duydk.ttcs.entity.StoryStatus;
 import org.springframework.data.domain.Page;
@@ -36,4 +37,23 @@ public interface StoryRepository extends JpaRepository<Story, Long> {
 
     @Query("SELECT s FROM Story s WHERE SIZE(s.chapters) >= :min")
     Page<Story> findByChapterCountGreaterThanEqual(@Param("min") int min, Pageable pageable);
+
+    @Query("SELECT s FROM Story s WHERE (:title IS NULL OR s.title LIKE %:title%) " +
+            "AND (:status IS NULL OR s.status = :status) " +
+            "AND (SELECT COUNT(c) FROM Chapter c WHERE c.story.id = s.id) BETWEEN :minChapters AND :maxChapters")
+    Page<Story> findByTitleContainingAndStatusAndChapterCount(
+            @Param("title") String title,
+            @Param("status") StoryStatus status,
+            @Param("minChapters") long minChapters,
+            @Param("maxChapters") long maxChapters,
+            Pageable pageable);
+
+    // Lấy danh sách Story theo Genre
+    @Query("SELECT s FROM Story s JOIN s.genres g WHERE g = :genre")
+    Page<Story> findByGenre(@Param("genre") Genre genre, Pageable pageable);
+
+    // Lấy danh sách Story theo ID của Genre
+    @Query("SELECT s FROM Story s JOIN s.genres g WHERE g.id = :genreId")
+    Page<Story> findByGenreId(@Param("genreId") Long genreId, Pageable pageable);
+
 }

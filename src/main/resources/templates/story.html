@@ -10,7 +10,7 @@
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Header CSS -->
-  <link rel="stylesheet" href="/css/header.css">
+  <link rel="stylesheet" th:href="@{~/css/header.css}">
   
   <style>
     /* Style cho ảnh bìa */
@@ -94,7 +94,7 @@
       white-space: pre-wrap;
     }
 
-    /*description style*/
+    /*Description style*/
     .story-description {
       max-height: 150px;
       overflow: hidden;
@@ -118,6 +118,71 @@
 
     .btn-link:hover {
       text-decoration: underline;
+    }
+    /* Style cho các nút hành động */
+    .action-buttons {
+      margin-top: auto;
+      padding-top: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .action-buttons .btn {
+      min-width: 120px;
+      text-align: center;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+    }
+
+    .action-buttons .btn-primary {
+      background-color: #007bff;
+      border-color: #007bff;
+    }
+
+    .action-buttons .btn-primary:hover {
+      background-color: #0056b3;
+      border-color: #0056b3;
+    }
+
+    .action-buttons .btn-success {
+      background-color: #28a745;
+      border-color: #28a745;
+    }
+
+    .action-buttons .btn-success:hover {
+      background-color: #1e7e34;
+      border-color: #1e7e34;
+    }
+
+    .action-buttons .btn-warning {
+      background-color: #ffc107;
+      border-color: #ffc107;
+      color: #212529;
+    }
+
+    .action-buttons .btn-warning:hover {
+      background-color: #e0a800;
+      border-color: #e0a800;
+    }
+
+    .action-buttons .btn-outline-primary {
+      border-color: #007bff;
+      color: #007bff;
+    }
+
+    .action-buttons .btn-outline-primary:hover {
+      background-color: #007bff;
+      color: white;
+    }
+
+    @media (max-width: 576px) {
+      .action-buttons .btn {
+        width: 100%;
+        margin-bottom: 10px;
+      }
     }
   </style>
 </head>
@@ -157,9 +222,14 @@
         </div>
 
         <!-- Nút hành động -->
-        <div class="action-buttons" th:if="${firstChapterId != null and lastChapterId != null}">
-          <a class="btn btn-primary me-2" th:href="@{/story/__${story.id}__/chapter/__${firstChapterId}__}">Đọc từ đầu</a>
-          <a class="btn btn-success" th:href="@{/story/__${story.id}__/chapter/__${lastChapterId}__}">Đọc chương mới nhất</a>
+        <div class="action-buttons">
+          <a th:if="${firstChapterId != null}" class="btn btn-primary me-2" th:href="@{/story/__${story.id}__/chapter/__${firstChapterId}__}">Đọc từ đầu</a>
+          <a th:if="${lastChapterId != null}" class="btn btn-success me-2" th:href="@{/story/__${story.id}__/chapter/__${lastChapterId}__}">Đọc chương mới nhất</a>
+          <form th:action="@{/story/__${story.id}__/bookmark}" method="POST" th:if="${isAuthenticated}">
+            <button type="submit" class="btn" th:classappend="${isBookmarked} ? 'btn-warning' : 'btn-outline-primary'"
+                    th:text="${isBookmarked} ? 'Đang theo dõi' : 'Theo dõi'"></button>
+          </form>
+          <a class="btn btn-outline-primary" th:href="@{/auth/login}" th:unless="${isAuthenticated}">Theo dõi</a>
         </div>
       </div>
     </div>

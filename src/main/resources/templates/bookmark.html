@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Truyện đang theo dõi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Header CSS -->
+    <link rel="stylesheet" th:href="@{~/css/header.css}">
+    <style>
+        .story-card {
+            transition: transform 0.2s;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .story-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .cover-img {
+            height: 200px;
+            object-fit: cover;
+            border-radius: 5px 5px 0 0;
+        }
+        .pagination .page-item.active .page-link {
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+        .search-info {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .card-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .card-text {
+            flex: 1;
+            color: #6c757d;
+        }
+        .card-footer {
+            margin-top: auto;
+        }
+    </style>
+</head>
+<body>
+<!-- Include header fragment -->
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main class="container my-5">
+    <div class="search-info">
+        <h2>Truyện đang theo dõi</h2>
+        <p class="text-muted" th:text="${'Tìm thấy ' + stories.totalElements + ' truyện'}"></p>
+    </div>
+
+    <!-- Bookmark results grid -->
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+        <div class="col" th:each="bookmark : ${stories.content}">
+            <a th:href="@{/story/__${bookmark.story.id}__}" class="text-decoration-none">
+                <div class="card story-card h-100">
+                    <div class="position-relative">
+                        <img th:src="${bookmark.story.coverImage}" class="card-img-top cover-img" alt="Story cover">
+                        <span th:if="${bookmark.story.status.name() == 'completed'}" class="badge bg-success status-badge">Completed</span>
+                        <span th:if="${bookmark.story.status.name() == 'ongoing'}" class="badge bg-warning status-badge">Ongoing</span>
+                        <span th:if="${bookmark.story.status.name() == 'dropped'}" class="badge bg-danger status-badge">Dropped</span>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${bookmark.story.title}"></h5>
+                        <p class="card-text text-muted" th:text="${bookmark.story.author}"></p>
+                        <p class="card-text" th:text="${#strings.abbreviate(bookmark.story.description, 100)}"></p>
+                        <p class="card-text text-muted">
+                            <small th:text="'Thêm vào: ' + ${#temporals.format(bookmark.createdAt, 'dd/MM/yyyy HH:mm')}"></small>
+                        </p>
+                    </div>
+                    <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+                        <small class="text-muted" th:text="${bookmark.story.views + ' lượt xem'}"></small>
+                        <a th:href="@{/story/__${bookmark.story.id}__}" class="btn btn-outline-dark btn-sm">
+                            Xem chi tiết
+                        </a>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <nav th:if="${stories.totalPages > 1}" class="mt-5">
+        <ul class="pagination justify-content-center">
+            <li class="page-item" th:classappend="${stories.first} ? 'disabled'">
+                <a class="page-link"
+                   th:href="@{/story/bookmark(page=${currentPage - 1}, size=${pageSize})}">
+                    Trước
+                </a>
+            </li>
+
+            <li th:each="i : ${#numbers.sequence(0, stories.totalPages - 1)}"
+                class="page-item" th:classappend="${i == currentPage} ? 'active'">
+                <a class="page-link"
+                   th:href="@{/story/bookmark(page=${i}, size=${pageSize})}"
+                   th:text="${i + 1}"></a>
+            </li>
+
+            <li class="page-item" th:classappend="${stories.last} ? 'disabled'">
+                <a class="page-link"
+                   th:href="@{/story/bookmark(page=${currentPage + 1}, size=${pageSize})}">
+                    Sau
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- No results message -->
+    <div th:if="${stories.empty}" class="text-center py-5">
+        <i class="fas fa-bookmark fa-3x text-muted mb-3"></i>
+        <h3>Chưa có truyện nào được theo dõi</h3>
+        <p class="text-muted">Hãy thêm truyện vào danh sách theo dõi của bạn!</p>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

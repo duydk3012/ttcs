@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 @Table(name = "bookmarks")
+@IdClass(BookmarkId.class)
 public class Bookmark {
     @Id
     @ManyToOne(fetch = FetchType.LAZY)

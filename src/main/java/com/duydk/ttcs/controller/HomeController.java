@@ -18,19 +18,24 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/")
 public class HomeController {
 
-
     private final UserService userService;
     private final StoryService storyService;
     private final ChapterService chapterService;
     private final GenreService genreService;
     private final CommentService commentService;
+    private final BookmarkService bookmarkService;
+    private final ReadingHistoryService readingHistoryService;
 
-    public HomeController(UserService userService, StoryService storyService, ChapterService chapterService, GenreService genreService, CommentService commentService) {
+    public HomeController(UserService userService, StoryService storyService, ChapterService chapterService,
+                          GenreService genreService, CommentService commentService,
+                          BookmarkService bookmarkService, ReadingHistoryService readingHistoryService) {
         this.userService = userService;
         this.storyService = storyService;
         this.chapterService = chapterService;
         this.genreService = genreService;
         this.commentService = commentService;
+        this.bookmarkService = bookmarkService;
+        this.readingHistoryService = readingHistoryService;
     }
 
     @GetMapping("/home")
@@ -38,14 +43,25 @@ public class HomeController {
         UserResponseDTO currentUser = userService.getCurrentUserProfile();
         model.addAttribute("currentUser", currentUser);
         model.addAttribute("isAuthenticated", currentUser != null);
-        // Thêm danh sách truyện hot
+        model.addAttribute("genreList", genreService.findAllGenres(Pageable.unpaged()).getContent());
         model.addAttribute("hotStories", storyService.getHotStories());
-        // Thêm danh sách chapter mới cập nhật
         model.addAttribute("recentUpdatedStories", storyService.getRecentUpdatedStories());
-        // Thêm danh sách truyện mới
         model.addAttribute("newStories", storyService.getNewStories());
-        // Thêm danh sách truyện đã hoàn thành
         model.addAttribute("completedStories", storyService.getCompletedStories());
+
+        if (currentUser != null) {
+            Pageable pageableBookmark = PageRequest.of(0, 10, Sort.by("createdAt").descending());
+            Pageable pageableHistory = PageRequest.of(0, 10, Sort.by("lastReadAt").descending()); // Sửa createdAt thành lastReadAt
+            model.addAttribute("bookmarkedStories", bookmarkService.getBookmarkRepository()
+                    .findByUserId(userService.getUserRepository()
+                            .findByUsername(currentUser.getUsername()).get().getId(), pageableBookmark)
+                    .getContent());
+            model.addAttribute("readingHistories", readingHistoryService.getReadingHistoryRepository()
+                    .findByUserId(userService.getUserRepository()
+                            .findByUsername(currentUser.getUsername()).get().getId(), pageableHistory)
+                    .getContent());
+        }
+
         return "home";
     }
 

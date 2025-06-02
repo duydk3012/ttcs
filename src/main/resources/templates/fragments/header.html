@@ -4,63 +4,119 @@
 <!-- Header Fragment -->
 <header th:fragment="header" class="navbar navbar-dark sticky-top bg-dark p-2 shadow">
     <div class="container-fluid d-flex align-items-center justify-content-between">
-        <!-- Logo -->
-        <a class="navbar-brand logo" th:href="@{/}">
-            <img th:src="@{/images/logo_text.png}" alt="Logo" class="img-fluid" style="max-width: 180px;">
-        </a>
+        <!-- Logo and Filters -->
+        <div class="d-flex align-items-center">
+            <!-- Icon and Logo -->
+            <a class="navbar-brand logo me-3" th:href="@{/}">
+                <i class="fas fa-book me-2" style="color: #ffffff; font-size: 24px;"></i>
+                <img th:src="@{/images/logo_text.png}" alt="Logo" class="img-fluid" style="max-width: 180px;">
+            </a>
 
-        <!-- Search bar with live results -->
-        <div class="position-relative">
-            <form class="d-flex" th:action="@{/story/search}" method="GET" id="searchForm">
+            <!-- Status Dropdown -->
+            <form th:action="@{/story/search}" method="GET" class="me-2">
+                <select class="form-select custom-dropdown" name="status" onchange="this.form.submit()">
+                    <option value="">Trạng thái</option>
+                    <option value="ongoing">Đang tiến hành</option>
+                    <option value="completed">Đã hoàn thành</option>
+                    <option value="dropped">Đã bỏ</option>
+                </select>
+                <input type="hidden" name="search" th:value="${search}">
+                <input type="hidden" name="page" value="0">
+                <input type="hidden" name="size" th:value="${pageSize ?: 10}">
+                <input type="hidden" name="chapters" th:value="${chapters}">
+                <input type="hidden" name="sortBy" th:value="${sortBy ?: 'title'}">
+                <input type="hidden" name="sortOrder" th:value="${sortOrder ?: 'asc'}">
+            </form>
+
+            <!-- Chapters Dropdown -->
+            <form th:action="@{/story/search}" method="GET" class="me-2">
+                <select class="form-select custom-dropdown" name="chapters" onchange="this.form.submit()">
+                    <option value="">Số chương</option>
+                    <option value="0-100">Ít hơn 100 chương</option>
+                    <option value="100-500">100-500 chương</option>
+                    <option value="500-1000">500-1000 chương</option>
+                    <option value="1000+">Trên 1000 chương</option>
+                </select>
+                <input type="hidden" name="search" th:value="${search}">
+                <input type="hidden" name="page" value="0">
+                <input type="hidden" name="size" th:value="${pageSize ?: 10}">
+                <input type="hidden" name="status" th:value="${status}">
+                <input type="hidden" name="sortBy" th:value="${sortBy ?: 'title'}">
+                <input type="hidden" name="sortOrder" th:value="${sortOrder ?: 'asc'}">
+            </form>
+
+            <!-- Genres Dropdown -->
+            <form th:action="@{/genre}" method="GET" class="me-2">
+                <select class="form-select custom-dropdown genres-dropdown" name="genre" onchange="this.form.submit()">
+                    <option value="">Thể loại</option>
+                    <option th:each="genre : ${genreList}" th:value="${genre.id}" th:text="${genre.name}"></option>
+                </select>
+                <input type="hidden" name="search" th:value="${search}">
+                <input type="hidden" name="page" value="0">
+                <input type="hidden" name="size" th:value="${pageSize ?: 10}">
+                <input type="hidden" name="status" th:value="${status}">
+                <input type="hidden" name="chapters" th:value="${chapters}">
+                <input type="hidden" name="sortBy" th:value="${sortBy ?: 'title'}">
+                <input type="hidden" name="sortOrder" th:value="${sortOrder ?: 'asc'}">
+            </form>
+        </div>
+
+        <!-- Search bar and User dropdown -->
+        <div class="d-flex align-items-center">
+            <!-- Search bar -->
+            <form class="d-flex me-3" th:action="@{/story/search}" method="GET" id="searchForm">
                 <div class="input-group search-box">
                     <input type="text" class="form-control" placeholder="Tìm kiếm..."
                            name="search" id="searchInput" th:value="${search}" autocomplete="off">
                     <input type="hidden" name="page" value="0">
-                    <input type="hidden" name="size" th:value="${pageSize}">
+                    <input type="hidden" name="size" th:value="${pageSize ?: 10}">
+                    <input type="hidden" name="status" th:value="${status}">
+                    <input type="hidden" name="chapters" th:value="${chapters}">
+                    <input type="hidden" name="sortBy" th:value="${sortBy ?: 'title'}">
+                    <input type="hidden" name="sortOrder" th:value="${sortOrder ?: 'asc'}">
                     <button class="btn btn-outline-secondary" type="submit">
                         <i class="fas fa-search"></i>
                     </button>
                 </div>
             </form>
-        </div>
 
+            <!-- User dropdown menu -->
+            <!-- Khi đã đăng nhập -->
+            <div class="dropdown user-dropdown" th:if="${isAuthenticated}">
+                <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img th:src="@{${currentUser.avatarUrl}}" width="32" height="32" class="rounded-circle me-2" alt="Avatar">
+                    <strong th:text="${currentUser.fullName} ?: ${currentUser.username}" class="d-none d-sm-inline"></strong>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark text-small shadow dropdown-menu-end" aria-labelledby="dropdownUser1">
+                    <li><a class="dropdown-item" th:href="@{/user/profile}">Hồ sơ</a></li>
+                    <li><a class="dropdown-item" th:href="@{/story/bookmark}">Truyện đang theo dõi</a></li>
+                    <li><a class="dropdown-item" th:href="@{/story/readinghistory}">Lịch sử đọc truyện</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li sec:authorize="hasRole('ADMIN')">
+                        <a class="dropdown-item" th:href="@{/admin/dashboard}">Bảng điều khiển Admin</a>
+                    </li>
+                    <li sec:authorize="hasRole('ADMIN')"><hr class="dropdown-divider"></li>
+                    <li>
+                        <form th:action="@{/logout}" method="POST">
+                            <button type="submit" class="dropdown-item">Đăng xuất</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
 
-        <!-- User dropdown menu -->
-
-        <!-- Khi đã đăng nhập -->
-        <div class="dropdown user-dropdown" th:if="${isAuthenticated}">
-            <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
-                <img th:src="@{${currentUser.avatarUrl}}" width="32" height="32" class="rounded-circle me-2" alt="Avatar">
-                <strong th:text="${currentUser.fullName} ?: ${currentUser.username}" class="d-none d-sm-inline"></strong>
-            </a>
-            <ul class="dropdown-menu dropdown-menu-dark text-small shadow dropdown-menu-end" aria-labelledby="dropdownUser1">
-                <li><a class="dropdown-item" th:href="@{/user/profile}">Profile</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li sec:authorize="hasRole('ADMIN')">
-                    <a class="dropdown-item" th:href="@{/admin/dashboard}">Admin Dashboard</a>
-                </li>
-                <li sec:authorize="hasRole('ADMIN')"><hr class="dropdown-divider"></li>
-                <li>
-                    <form th:action="@{/logout}" method="POST">
-                        <button type="submit" class="dropdown-item">Log out</button>
-                    </form>
-                </li>
-            </ul>
-        </div>
-
-        <!-- Khi chưa đăng nhập -->
-        <div class="dropdown user-dropdown" th:unless="${isAuthenticated}">
-            <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fas fa-user-circle me-2" style="font-size: 24px;"></i>
-                <strong class="d-none d-sm-inline">Account</strong>
-            </a>
-            <ul class="dropdown-menu dropdown-menu-dark text-small shadow dropdown-menu-end" aria-labelledby="dropdownUser1">
-                <li><a class="dropdown-item" th:href="@{/auth/login}">Login</a></li>
-                <li><a class="dropdown-item" th:href="@{/auth/register}">Register</a></li>
-            </ul>
+            <!-- Khi chưa đăng nhập -->
+            <div class="dropdown user-dropdown" th:unless="${isAuthenticated}">
+                <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-user-circle me-2" style="font-size: 24px;"></i>
+                    <strong class="d-none d-sm-inline">Tài khoản</strong>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark text-small shadow dropdown-menu-end" aria-labelledby="dropdownUser1">
+                    <li><a class="dropdown-item" th:href="@{/auth/login}">Đăng nhập</a></li>
+                    <li><a class="dropdown-item" th:href="@{/auth/register}">Đăng ký</a></li>
+                </ul>
+            </div>
         </div>
     </div>
 </header>
-
 </body>
 </html>

@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Header CSS -->
-    <link rel="stylesheet" href="/css/header.css">
+    <link rel="stylesheet" th:href="@{~/css/header.css}">
 
     <style>
         /* Style cho phần Truyện Hot và Truyện Đã Hoàn Thành */
@@ -58,12 +58,17 @@
             font-size: 0.9rem;
         }
 
-        /* Style cho danh sách Truyện Mới Cập Nhật và Truyện Mới */
+        /* Style cho danh sách Truyện Mới Cập Nhật, Truyện Mới, Truyện Đang Theo Dõi, Truyện Đã Xem */
         .chapter-item, .new-story-item {
             display: flex;
             align-items: center;
             padding: 10px;
             border-bottom: 1px solid #e0e0e0;
+            transition: background-color 0.2s;
+        }
+
+        .chapter-item:hover, .new-story-item:hover {
+            background-color: #f8f9fa;
         }
 
         .chapter-item img, .new-story-item img {
@@ -78,12 +83,12 @@
             flex-grow: 1;
         }
 
-        .section-title {
-            margin: 20px 0;
-            font-size: 1.5rem;
-            font-weight: bold;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 5px;
+        .chapter-item h5, .new-story-item h5 {
+            color: #007bff; /* Tiêu đề truyện màu xanh */
+        }
+
+        .chapter-item p, .new-story-item p, .chapter-item small, .new-story-item small {
+            color: #333; /* Các thông tin khác màu tối */
         }
         /* Common styles for story images */
         .story-cover {
@@ -206,6 +211,64 @@
                         </div>
                     </a>
                 </div>
+            </div>
+        </section>
+
+    </div>
+
+    <div class="row mt-5">
+
+        <!-- Truyện Đang Theo Dõi -->
+        <section class="col-md-6">
+            <h2 class="section-title">Truyện Đang Theo Dõi</h2>
+            <div th:if="${isAuthenticated}">
+                <div class="list-group">
+                    <div class="chapter-item list-group-item" th:each="bookmark : ${bookmarkedStories}">
+                        <a th:href="@{/story/__${bookmark.story.id}__}" class="text-decoration-none story-info-container">
+                            <img th:src="${bookmark.story.coverImage}" alt="Cover" class="story-cover">
+                            <div class="chapter-info">
+                                <h5 class="mb-1 text-primary" th:text="${bookmark.story.title}"></h5>
+                                <p class="mb-1 text-dark" th:text="'Tác giả: ' + ${bookmark.story.author}"></p>
+                                <small class="text-dark"
+                                       th:text="'Thêm vào: ' + ${#temporals.format(bookmark.createdAt, 'dd/MM/yyyy HH:mm')}"></small>
+                            </div>
+                        </a>
+                    </div>
+                    <div th:if="${#lists.isEmpty(bookmarkedStories)}" class="text-muted">
+                        Bạn chưa theo dõi truyện nào.
+                    </div>
+                </div>
+            </div>
+            <div th:unless="${isAuthenticated}" class="alert alert-warning">
+                Bạn cần <a th:href="@{/auth/login}">đăng nhập</a> để xem danh sách truyện đang theo dõi.
+            </div>
+        </section>
+
+        <!-- Truyện Đã Xem -->
+        <section class="col-md-6">
+            <h2 class="section-title">Truyện Đã Xem</h2>
+            <div th:if="${isAuthenticated}">
+                <div class="list-group">
+                    <div class="chapter-item list-group-item" th:each="history : ${readingHistories}">
+                        <a th:href="@{/story/__${history.story.id}__/chapter/__${history.chapter.id}__}"
+                           class="text-decoration-none story-info-container">
+                            <img th:src="${history.story.coverImage}" alt="Cover" class="story-cover">
+                            <div class="chapter-info">
+                                <h5 class="mb-1 text-primary" th:text="${history.story.title}"></h5>
+                                <p class="mb-1 text-dark"
+                                   th:text="'Chương ' + ${history.chapter.chapterNumber} + ': ' + ${history.chapter.title}"></p>
+                                <small class="text-dark"
+                                       th:text="'Đọc lúc: ' + ${#temporals.format(history.lastReadAt, 'dd/MM/yyyy HH:mm')}"></small>
+                            </div>
+                        </a>
+                    </div>
+                    <div th:if="${#lists.isEmpty(readingHistories)}" class="text-muted">
+                        Bạn chưa đọc truyện nào.
+                    </div>
+                </div>
+            </div>
+            <div th:unless="${isAuthenticated}" class="alert alert-warning">
+                Bạn cần <a th:href="@{/auth/login}">đăng nhập</a> để xem danh sách truyện đã xem.
             </div>
         </section>
     </div>

@@ -2,6 +2,7 @@ package com.duydk.ttcs.service;
 
 import com.duydk.ttcs.dto.StoryWithLatestChapterDTO;
 import com.duydk.ttcs.entity.Chapter;
+import com.duydk.ttcs.entity.Genre;
 import com.duydk.ttcs.entity.Story;
 import com.duydk.ttcs.entity.StoryStatus;
 import com.duydk.ttcs.repository.StoryRepository;
@@ -82,4 +83,14 @@ public class StoryService {
     public List<Story> getCompletedStories() {
         return storyRepository.findTop10ByStatusOrderByViewsDesc(StoryStatus.completed);
     }
+    // Lấy ds Story theo GenreId
+    public Page<Story> findStoriesByGenreId(Long genreId, Pageable pageable) {
+        return storyRepository.findByGenreId(genreId, pageable);
+    }
+
+    // Lấy ds Story theo Genre
+    public Page<Story> findStoriesByGenre(Genre genre, Pageable pageable) {
+        return storyRepository.findByGenre(genre, pageable);
+    }
+
 }

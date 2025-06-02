@@ -6,6 +6,8 @@
   <title>Kết quả tìm kiếm</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <!-- Header CSS -->
+  <link rel="stylesheet" th:href="@{~/css/header.css}">
   <style>
     .story-card {
       transition: transform 0.2s;
@@ -59,14 +61,34 @@
       padding: 15px;
       margin-bottom: 20px;
     }
-    .sort-switch {
+    .sort-btn-group {
       display: flex;
-      align-items: center;
-      gap: 10px;
+      gap: 5px;
+      flex-wrap: wrap;
     }
-    .sort-switch .form-check-input {
-      margin-left: 0;
-      margin-right: 5px;
+    .sort-btn {
+      position: relative;
+      padding-right: 30px;
+    }
+    .sort-icon {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .active-sort {
+      background-color: #6c757d;
+      color: white;
+    }
+    .sort-btn .sort-icon {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.7;
+    }
+    .sort-btn.active-sort .sort-icon {
+      opacity: 1;
     }
   </style>
 </head>
@@ -84,68 +106,79 @@
   <div class="filter-section">
     <form id="filterForm" th:action="@{/story/search}" method="get">
       <input type="hidden" name="search" th:value="${search}">
-      <input type="hidden" name="page" th:value="${currentPage}">
+      <input type="hidden" name="page" value="0"> <!-- Reset to first page when filters change -->
       <input type="hidden" name="size" th:value="${pageSize}">
+      <input type="hidden" name="sortBy" id="sortByInput" th:value="${param.sortBy ?: 'title'}">
+      <input type="hidden" name="sortOrder" id="sortOrderInput" th:value="${param.sortOrder ?: 'asc'}">
 
       <div class="row g-3">
         <!-- Status Filter -->
         <div class="col-md-3">
           <label for="status" class="form-label">Trạng thái</label>
-          <select class="form-select" id="status" name="status">
-            <option value="">Tất cả</option>
-            <option value="ongoing" th:selected="${param.status == 'ongoing'}">Đang tiến hành</option>
-            <option value="completed" th:selected="${param.status == 'completed'}">Đã hoàn thành</option>
-            <option value="dropped" th:selected="${param.status == 'dropped'}">Đã bỏ</option>
+          <select class="form-select" id="status" name="status" onchange="this.form.submit()">
+            <option value="" th:selected="${status == null or status == ''}">Tất cả</option>
+            <option value="ongoing" th:selected="${status == 'ongoing'}">Đang tiến hành</option>
+            <option value="completed" th:selected="${status == 'completed'}">Đã hoàn thành</option>
+            <option value="dropped" th:selected="${status == 'dropped'}">Đã bỏ</option>
           </select>
         </div>
 
         <!-- Chapter Count Filter -->
         <div class="col-md-3">
           <label for="chapters" class="form-label">Số chương</label>
-          <select class="form-select" id="chapters" name="chapters">
-            <option value="">Tất cả</option>
-            <option value="0-100" th:selected="${param.chapters == '0-100'}">Ít hơn 100 chương</option>
-            <option value="100-500" th:selected="${param.chapters == '100-500'}">100-500 chương</option>
-            <option value="500-1000" th:selected="${param.chapters == '500-1000'}">500-1000 chương</option>
-            <option value="1000+" th:selected="${param.chapters == '1000+'}">Trên 1000 chương</option>
+          <select class="form-select" id="chapters" name="chapters" onchange="this.form.submit()">
+            <option value="" th:selected="${chapters == null or chapters == ''}">Tất cả</option>
+            <option value="0-100" th:selected="${chapters == '0-100'}">Ít hơn 100 chương</option>
+            <option value="100-500" th:selected="${chapters == '100-500'}">100-500 chương</option>
+            <option value="500-1000" th:selected="${chapters == '500-1000'}">500-1000 chương</option>
+            <option value="1000+" th:selected="${chapters == '1000+'}">Trên 1000 chương</option>
           </select>
         </div>
 
         <!-- Sort Options -->
         <div class="col-md-6">
-          <div class="row">
-            <div class="col-md-6">
-              <label for="sortBy" class="form-label">Sắp xếp theo</label>
-              <select class="form-select" id="sortBy" name="sortBy">
-                <option value="title" th:selected="${param.sortBy == 'title'}">Tên truyện</option>
-                <option value="createdAt" th:selected="${param.sortBy == 'createdAt'}">Ngày đăng</option>
-                <option value="updatedAt" th:selected="${param.sortBy == 'updatedAt'}">Ngày cập nhật</option>
-                <option value="views" th:selected="${param.sortBy == 'views'}">Lượt xem</option>
-                <option value="chapterCount" th:selected="${param.sortBy == 'chapterCount'}">Số chương</option>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Thứ tự</label>
-              <div class="sort-switch">
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" id="sortOrder" name="sortOrder"
-                         th:checked="${param.sortOrder == 'desc'}" value="desc">
-                  <label class="form-check-label" for="sortOrder">
-                    <span id="sortOrderLabel">Giảm dần</span>
-                  </label>
-                </div>
-                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleSortOrder()">
-                  <i class="fas fa-sync-alt"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+          <label class="form-label">Sắp xếp</label>
+          <div class="sort-btn-group">
+            <!-- Nút sắp xếp theo tên -->
+            <button type="button" class="btn btn-outline-secondary sort-btn"
+                    th:classappend="${(param.sortBy ?: 'title') == 'title'} ? 'active-sort'"
+                    onclick="setSort('title')">
+              Tên truyện
+              <i class="fas sort-icon"
+                 th:classappend="(${param.sortBy ?: 'title'} == 'title') ?
+     ((${param.sortOrder} ?: 'asc') == 'asc' ? 'fa-arrow-up' : 'fa-arrow-down') : 'fa-arrow-up'"></i>
+            </button>
 
-        <!-- Apply Filters Button -->
-        <div class="col-12">
-          <button type="submit" class="btn btn-primary">Áp dụng bộ lọc</button>
-          <button type="button" class="btn btn-outline-secondary" onclick="resetFilters()">Đặt lại</button>
+            <!-- Nút sắp xếp theo ngày đăng -->
+            <button type="button" class="btn btn-outline-secondary sort-btn"
+                    th:classappend="${(param.sortBy ?: 'title') == 'createdAt'} ? 'active-sort'"
+                    onclick="setSort('createdAt')">
+              Ngày đăng
+              <i class="fas sort-icon"
+                 th:classappend="(${param.sortBy ?: 'title'} == 'createdAt') ?
+     ((${param.sortOrder} ?: 'asc') == 'asc' ? 'fa-arrow-up' : 'fa-arrow-down') : 'fa-arrow-up'"></i>
+            </button>
+
+            <!-- Nút sắp xếp theo ngày cập nhật -->
+            <button type="button" class="btn btn-outline-secondary sort-btn"
+                    th:classappend="${(param.sortBy ?: 'title') == 'updatedAt'} ? 'active-sort'"
+                    onclick="setSort('updatedAt')">
+              Ngày cập nhật
+              <i class="fas sort-icon"
+                 th:classappend="(${param.sortBy ?: 'title'} == 'updatedAt') ?
+     ((${param.sortOrder} ?: 'asc') == 'asc' ? 'fa-arrow-up' : 'fa-arrow-down') : 'fa-arrow-up'"></i>
+            </button>
+
+            <!-- Nút sắp xếp theo lượt xem -->
+            <button type="button" class="btn btn-outline-secondary sort-btn"
+                    th:classappend="${(param.sortBy ?: 'title') == 'views'} ? 'active-sort'"
+                    onclick="setSort('views')">
+              Lượt xem
+              <i class="fas sort-icon"
+                 th:classappend="(${param.sortBy ?: 'title'} == 'views') ?
+     ((${param.sortOrder} ?: 'asc') == 'asc' ? 'fa-arrow-up' : 'fa-arrow-down') : 'fa-arrow-up'"></i>
+            </button>
+          </div>
         </div>
       </div>
     </form>
@@ -158,9 +191,9 @@
         <div class="card story-card h-100">
           <div class="position-relative">
             <img th:src="${story.coverImage}" class="card-img-top cover-img" alt="Story cover">
-            <span th:if="${story.status.name() == 'completed'}" class="badge bg-success status-badge">Hoàn thành</span>
-            <span th:if="${story.status.name() == 'ongoing'}" class="badge bg-warning status-badge">Đang ra</span>
-            <span th:if="${story.status.name() == 'dropped'}" class="badge bg-danger status-badge">Đã bỏ</span>
+            <span th:if="${story.status.name() == 'completed'}" class="badge bg-success status-badge">Completed</span>
+            <span th:if="${story.status.name() == 'ongoing'}" class="badge bg-warning status-badge">Ongoing</span>
+            <span th:if="${story.status.name() == 'dropped'}" class="badge bg-danger status-badge">Dropped</span>
           </div>
           <div class="card-body">
             <h5 class="card-title" th:text="${story.title}"></h5>
@@ -184,7 +217,7 @@
       <li class="page-item" th:classappend="${stories.first} ? 'disabled'">
         <a class="page-link"
            th:href="@{/story/search(search=${search}, page=${currentPage - 1}, size=${pageSize},
-           status=${param.status}, chapters=${param.chapters}, sortBy=${param.sortBy}, sortOrder=${param.sortOrder})}">
+           status=${status}, chapters=${chapters}, sortBy=${sortBy}, sortOrder=${sortOrder})}">
           Trước
         </a>
       </li>
@@ -193,14 +226,14 @@
           class="page-item" th:classappend="${i == currentPage} ? 'active'">
         <a class="page-link"
            th:href="@{/story/search(search=${search}, page=${i}, size=${pageSize},
-           status=${param.status}, chapters=${param.chapters}, sortBy=${param.sortBy}, sortOrder=${param.sortOrder})}"
+           status=${status}, chapters=${chapters}, sortBy=${sortBy}, sortOrder=${sortOrder})}"
            th:text="${i + 1}"></a>
       </li>
 
       <li class="page-item" th:classappend="${stories.last} ? 'disabled'">
         <a class="page-link"
            th:href="@{/story/search(search=${search}, page=${currentPage + 1}, size=${pageSize},
-           status=${param.status}, chapters=${param.chapters}, sortBy=${param.sortBy}, sortOrder=${param.sortOrder})}">
+           status=${status}, chapters=${chapters}, sortBy=${sortBy}, sortOrder=${sortOrder})}">
           Sau
         </a>
       </li>
@@ -217,35 +250,18 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  // Update sort order label based on checkbox state
-  document.addEventListener('DOMContentLoaded', function() {
-    updateSortOrderLabel();
+  function setSort(sortBy) {
+    const sortByInput = document.getElementById('sortByInput');
+    const sortOrderInput = document.getElementById('sortOrderInput');
 
-    // Add event listener to the checkbox
-    document.getElementById('sortOrder').addEventListener('change', function() {
-      updateSortOrderLabel();
-    });
-  });
-
-  function updateSortOrderLabel() {
-    const checkbox = document.getElementById('sortOrder');
-    const label = document.getElementById('sortOrderLabel');
-    label.textContent = checkbox.checked ? 'Giảm dần' : 'Tăng dần';
-  }
-
-  function toggleSortOrder() {
-    const checkbox = document.getElementById('sortOrder');
-    checkbox.checked = !checkbox.checked;
-    updateSortOrderLabel();
-  }
-
-  function resetFilters() {
-    // Reset all form fields
-    document.getElementById('status').value = '';
-    document.getElementById('chapters').value = '';
-    document.getElementById('sortBy').value = 'title';
-    document.getElementById('sortOrder').checked = true;
-    updateSortOrderLabel();
+    // If clicking the same sort option, toggle the order
+    if (sortByInput.value === sortBy) {
+      sortOrderInput.value = (sortOrderInput.value === 'asc' || sortOrderInput.value === '') ? 'desc' : 'asc';
+    } else {
+      // If clicking a different sort option, default to ascending
+      sortByInput.value = sortBy;
+      sortOrderInput.value = 'asc';
+    }
 
     // Submit the form
     document.getElementById('filterForm').submit();

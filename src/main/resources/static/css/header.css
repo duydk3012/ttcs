@@ -1,6 +1,7 @@
 /* Header styles */
 .navbar {
-    padding: 0.5rem 1rem;
+    padding: 0.5rem;
+    height: 64px; /* Fixed height for header */
 }
 
 .user-dropdown .dropdown-toggle {
@@ -20,19 +21,47 @@
 .logo:hover img {
     transform: scale(1.05);
 }
-#liveSearchResults {
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+
+/* Custom dropdown styles */
+.custom-dropdown {
+    background-color: #212529;
+    color: #ffffff;
+    border: 2px solid #495057; /* Increased border width */
+    width: 150px;
+    height: 48px; /* Match header height minus padding */
+    padding: 0.5rem;
+    font-size: 0.875rem;
 }
 
-#liveSearchResults a {
-    transition: background-color 0.2s;
+.custom-dropdown:focus,
+.custom-dropdown:active {
+    background-color: #212529;
+    color: #ffffff;
+    border-color: #6c757d;
 }
 
-#liveSearchResults a:hover {
-    background-color: #f8f9fa;
-    text-decoration: none;
+.custom-dropdown option {
+    background-color: #343a40;
+    color: #ffffff;
 }
 
-#liveSearchResults img {
-    object-fit: cover;
+.custom-dropdown option:disabled {
+    color: #adb5bd;
+}
+
+/* Genres dropdown scrollable */
+.genres-dropdown {
+    max-height: 200px; /* Height for 5 items (approx 40px per item) */
+    overflow-y: auto;
+}
+
+/* Hover effect for dropdown */
+.custom-dropdown:hover {
+    border-color: #6c757d;
+}
+
+/* Tăng chiều cao tối đa cho dropdown menu để chứa thêm mục */
+.dropdown-menu {
+    max-height: 400px; /* Tăng chiều cao để chứa nhiều mục hơn */
+    overflow-y: auto;
 }
