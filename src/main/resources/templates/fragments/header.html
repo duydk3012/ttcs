@@ -9,7 +9,25 @@
             <img th:src="@{/images/logo_text.png}" alt="Logo" class="img-fluid" style="max-width: 180px;">
         </a>
 
+        <!-- Search bar with live results -->
+        <div class="position-relative">
+            <form class="d-flex" th:action="@{/story/search}" method="GET" id="searchForm">
+                <div class="input-group search-box">
+                    <input type="text" class="form-control" placeholder="Tìm kiếm..."
+                           name="search" id="searchInput" th:value="${search}" autocomplete="off">
+                    <input type="hidden" name="page" value="0">
+                    <input type="hidden" name="size" th:value="${pageSize}">
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+
         <!-- User dropdown menu -->
+
+        <!-- Khi đã đăng nhập -->
         <div class="dropdown user-dropdown" th:if="${isAuthenticated}">
             <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
                 <img th:src="@{${currentUser.avatarUrl}}" width="32" height="32" class="rounded-circle me-2" alt="Avatar">
@@ -43,5 +61,6 @@
         </div>
     </div>
 </header>
+
 </body>
 </html>

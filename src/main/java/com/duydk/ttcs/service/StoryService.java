@@ -55,6 +55,7 @@ public class StoryService {
         }
         storyRepository.deleteById(id);
     }
+
     // Lấy top 10 truyện hot
     public List<Story> getHotStories() {
         return storyRepository.findTop10ByOrderByViewsDesc();

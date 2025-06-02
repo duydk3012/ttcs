@@ -19,7 +19,6 @@ public class StoryWithLatestChapterDTO {
     private String chapterTitle;
     private LocalDateTime chapterUpdatedAt;
 
-    // Constructor
     public StoryWithLatestChapterDTO(Story story, Chapter chapter) {
         this.storyId = story.getId();
         this.title = story.getTitle();

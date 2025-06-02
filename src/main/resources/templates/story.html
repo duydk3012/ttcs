@@ -9,30 +9,10 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+  <!-- Header CSS -->
+  <link rel="stylesheet" href="/css/header.css">
+  
   <style>
-    /* Header styles */
-    .navbar {
-      padding: 0.5rem 1rem;
-    }
-
-    .user-dropdown .dropdown-toggle {
-      padding: 0.25rem 0.5rem;
-    }
-
-    .user-dropdown img {
-      width: 32px;
-      height: 32px;
-      object-fit: cover;
-    }
-
-    .logo img {
-      transition: transform 0.3s ease;
-    }
-
-    .logo:hover img {
-      transform: scale(1.05);
-    }
     /* Style cho ảnh bìa */
     .cover-image {
       width: 300px;
@@ -89,7 +69,6 @@
       margin-bottom: 20px;
     }
 
-    /* Thêm style mới */
     .story-info {
       min-height: 400px;
       display: flex;
@@ -198,7 +177,6 @@
       </tr>
       </thead>
       <tbody>
-      <!-- Lặp qua danh sách chương với phân trang -->
       <tr th:each="chapter : ${chapters.content}">
         <td><a th:href="@{/story/__${story.id}__/chapter/__${chapter.id}__}" th:text="'Chương ' + ${chapter.chapterNumber}"></a></td>
         <td th:text="${chapter.title}"></td>
@@ -269,7 +247,7 @@
 
       // Ẩn nút nếu nội dung không đủ dài
       const lineHeight = parseInt(window.getComputedStyle(description).lineHeight);
-      const maxHeight = 5 * lineHeight; // 5 dòng
+      const maxHeight = 5 * lineHeight;
       if (description.scrollHeight <= maxHeight) {
         toggleBtn.style.display = 'none';
       }

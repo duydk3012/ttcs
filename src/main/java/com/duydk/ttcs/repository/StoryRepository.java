@@ -28,4 +28,12 @@ public interface StoryRepository extends JpaRepository<Story, Long> {
 
     // Lấy top 10 truyện có status là completed (Truyện Đã Hoàn Thành)
     List<Story> findTop10ByStatusOrderByViewsDesc(StoryStatus status);
+
+    Page<Story> findByTitleContainingAndStatus(String title, StoryStatus status, Pageable pageable);
+
+    @Query("SELECT s FROM Story s WHERE SIZE(s.chapters) BETWEEN :min AND :max")
+    Page<Story> findByChapterCountBetween(@Param("min") int min, @Param("max") int max, Pageable pageable);
+
+    @Query("SELECT s FROM Story s WHERE SIZE(s.chapters) >= :min")
+    Page<Story> findByChapterCountGreaterThanEqual(@Param("min") int min, Pageable pageable);
 }

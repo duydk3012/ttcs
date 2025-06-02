@@ -10,79 +10,10 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <!-- Header CSS -->
+    <link rel="stylesheet" href="/css/header.css">
+
     <style>
-        /* Header styles */
-        header.navbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            z-index: 1030;
-            min-height: 56px;
-            background-color: #212529;
-            padding: 0.5rem 1rem;
-        }
-
-        .navbar-brand.logo {
-            flex-shrink: 0;
-            margin-right: auto;
-        }
-
-        header.navbar .container-fluid {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
-            padding-right: var(--bs-gutter-x, 0.75rem);
-            padding-left: var(--bs-gutter-x, 0.75rem);
-            margin-right: auto;
-            margin-left: auto;
-        }
-
-        .user-dropdown {
-            flex-shrink: 0;
-            margin-left: auto;
-        }
-
-        .dropdown-menu {
-            position: absolute;
-            margin: 0px;
-            transform: translate(0px, 34px);
-        }
-
-        .dropdown-menu.dropdown-menu-end {
-            right: 0;
-            left: auto;
-        }
-
-        @media (max-width: 991.98px) {
-            .navbar-brand.logo {
-                position: absolute;
-                left: 50%;
-                transform: translateX(-50%);
-            }
-
-            .user-dropdown {
-                margin-left: 0;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .navbar-brand.logo {
-                position: static;
-                transform: none;
-                margin: 0 auto;
-                display: block;
-                text-align: center;
-                width: 100%;
-            }
-
-            .user-dropdown strong {
-                display: none;
-            }
-        }
-
         /* Style cho phần Truyện Hot và Truyện Đã Hoàn Thành */
         .story-item {
             position: relative;
